@@ -1,0 +1,110 @@
+/* Reset margins and paddings */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Ensure the body and overall app take up the full screen */
+body, html {
+    height: 100%;
+    width: 100%;
+}
+
+/* Grid layout with no extra margins or paddings, filling the screen */
+#app-container {
+    display: grid;
+    grid-template-columns: 3fr 1fr; /* 3/4 for left, 1/4 for right */
+    gap: 10px;
+    height: 100vh; /* Full height of the viewport */
+    padding: 10px; /* Minimal padding for the overall grid */
+}
+
+/* Left section for form inputs, tree, and submit button */
+.left-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Spread out the elements */
+    height: 100%; /* Ensure the section uses all the vertical space */
+}
+
+/* Right section for documentation, schema info */
+.right-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Spread out the elements */
+    height: 100%; /* Ensure the section uses all the vertical space */
+}
+
+/* Container for the database name and dropdown in the same line */
+.header-dropdown-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+/* Header for database name */
+#db-name-header {
+    text-align: left;
+    font-size: 24px;
+}
+
+/* Style for the dropdown menu next to the header */
+#db-dropdown {
+    width: 200px; /* Fixed width */
+    text-align: center;
+}
+
+/* Documentation placeholder */
+#documentation-placeholder {
+    text-align: left;
+    font-size: 18px;
+    font-style: italic;
+    padding: 5px;
+}
+
+/* Style for the query input textarea */
+#query-input {
+    width: 100%;
+    height: 150px;
+    margin: 10px 0;
+}
+
+/* Submit button */
+#submit-btn {
+    width: 100%;
+    text-align: center;
+    margin: 10px 0;
+}
+
+/* Schema information table placeholder */
+#schema-info {
+    width: 100%;
+    border: 1px solid #ddd;
+    text-align: left;
+    padding: 10px;
+    font-size: 14px;
+}
+
+/* Tree visualization on the left */
+#cytoscape-tree {
+    width: 100%;
+    height: 600px;
+}
+
+/* Placeholder for tables from nodes */
+#node-table-placeholder {
+    width: 100%;
+    border: 1px solid #ddd;
+    text-align: left;
+    padding: 10px;
+    font-size: 14px;
+}
+
+/* Error message */
+#error-div {
+    color: red;
+    margin-top: 10px;
+    text-align: center;
+}

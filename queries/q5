@@ -1,0 +1,15 @@
+# Query 5: List the names of all employees with two or more dependents.
+
+project[lname,fname](
+(rename[ssn](
+ project[essn1](
+  select[essn1=essn2 and dname1<>dname2](
+   (rename[essn1,dname1](project[essn,dependent_name](dependent))
+    times
+    rename[essn2,dname2](project[essn,dependent_name](dependent)))
+   )
+  )
+ )
+join
+employee)
+);

@@ -1,0 +1,21 @@
+# Query 3: Find the names of employees who work on all the 
+# projects controlled by department number 4.
+
+project[lname,fname](
+ (employee
+  join
+  (project[ssn](employee)
+   minus
+   project[ssn](
+    (
+      (project[ssn](employee) 
+       times  
+       project[pnumber](select[dnum=4](projects))
+      )
+      minus
+      rename[ssn,pnumber](project[essn,pno](works_on))
+    )
+   )
+  )
+ )
+);

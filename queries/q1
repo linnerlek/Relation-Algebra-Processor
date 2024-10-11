@@ -1,0 +1,10 @@
+# Query 1: Retrieve the name and address of employees 
+# who work for the "Research" department.
+
+project[fname,lname,address](
+  (rename[dname,dno,mgrssn,mgrstartdate](
+      select[dname='Research'](department)) 
+   join 
+   employee
+  )
+);
