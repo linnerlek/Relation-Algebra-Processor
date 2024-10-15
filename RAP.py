@@ -798,6 +798,49 @@ def generateSQL(tree, db):
         query += ")"
         return query
 
+# -------------------------------------------------------
+# Tree to JSON 
+
+def tree_to_json(node, db):
+    if node is None:
+        return None
+
+    relation_name = node.get_relation_name() if node.get_relation_name() else "UNKNOWN"
+
+    node_json = {
+        'node_type': node.get_node_type(),
+        'relation_name': relation_name, 
+        'left_child': tree_to_json(node.get_left_child(), db),
+        'right_child': tree_to_json(node.get_right_child(), db)
+    }
+
+    if node.get_node_type() == 'project':
+        node_json['columns'] = node.get_columns()  
+    elif node.get_node_type() == 'select':
+        node_json['conditions'] = node.get_conditions()
+    elif node.get_node_type() == 'join':
+        node_json['join_columns'] = node.get_join_columns()
+
+    return node_json
+
+
+def generate_tree_from_query(query, db):
+    try:
+        tree = parser.parse(query)
+
+        validation_msg = semantic_checks(tree, db)
+        if validation_msg != 'OK':
+            return {'error': f"Semantic check failed: {validation_msg}"}
+
+        json_tree = tree_to_json(tree, db)
+
+        return json_tree
+    except Exception as e:
+        return {'error': str(e)}
+    
+
+# -------------------------------------------------------
+# main
 
 def main():
     db = SQLite3()
@@ -840,34 +883,6 @@ def main():
         else:
             print(msg)
     db.close()
-
-# ----------------------------------------------------------------
-# Tree-visualization
-
-# Converting three node into JSON
-
-
-def tree_to_json(node):
-    if node is None:
-        return None
-    return {
-        'node_type': node.get_node_type(),
-        'relation_name': node.get_relation_name(),
-        'left_child': tree_to_json(node.get_left_child()),
-        'right_child': tree_to_json(node.get_right_child())
-    }
-
-# Returning tree as JSON for query
-
-
-def get_tree_as_json(query):
-    try:
-        tree = parser.parse(query)
-        json_tree = tree_to_json(tree)
-        return json_tree
-    except Exception as e:
-        return {"error": stre(e)}
-
 
 if __name__ == '__main__':
     main()
