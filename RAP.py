@@ -96,14 +96,14 @@ def p_query(p):
 
 
 def p_expr(p):
-    '''expr : proj_expr 
-            | rename_expr 
-            | union_expr     
-            | minus_expr 
-            | intersect_expr 
-            | join_expr 
-            | times_expr 
-            | paren_expr 
+    '''expr : proj_expr
+            | rename_expr
+            | union_expr
+            | minus_expr
+            | intersect_expr
+            | join_expr
+            | times_expr
+            | paren_expr
             | select_expr '''
     p[0] = p[1]
 
@@ -798,33 +798,40 @@ def generateSQL(tree, db):
         query += ")"
         return query
 
-# -------------------------------------------------------
-# Tree to JSON 
 
-def tree_to_json(node, db):
+# ------------------------ Dash app Functions -------------------------------
+
+def tree_to_json(node, db, node_counter=[0]):
     if node is None:
         return None
 
     relation_name = node.get_relation_name() if node.get_relation_name() else "UNKNOWN"
+    node_id = f"node_{node_counter[0]}"
+    node_counter[0] += 1
 
     node_json = {
+        'node_id': node_id,
         'node_type': node.get_node_type(),
-        'relation_name': relation_name, 
-        'left_child': tree_to_json(node.get_left_child(), db),
-        'right_child': tree_to_json(node.get_right_child(), db)
+        'relation_name': relation_name,
+        'left_child': tree_to_json(node.get_left_child(), db, node_counter),
+        'right_child': tree_to_json(node.get_right_child(), db, node_counter),
+        'attributes': node.get_attributes()
     }
 
     if node.get_node_type() == 'project':
-        node_json['columns'] = node.get_columns()  
+        node_json['columns'] = node.get_columns()
     elif node.get_node_type() == 'select':
         node_json['conditions'] = node.get_conditions()
     elif node.get_node_type() == 'join':
         node_json['join_columns'] = node.get_join_columns()
+    elif node.get_node_type() == 'rename':
+        # Using columns for renamed columns
+        node_json['new_columns'] = node.get_columns()
 
     return node_json
 
 
-def generate_tree_from_query(query, db):
+def generate_tree_from_query(query, db, node_counter=[0]):
     try:
         tree = parser.parse(query)
 
@@ -832,16 +839,176 @@ def generate_tree_from_query(query, db):
         if validation_msg != 'OK':
             return {'error': f"Semantic check failed: {validation_msg}"}
 
-        json_tree = tree_to_json(tree, db)
+        json_tree = tree_to_json(tree, db, node_counter)
 
         return json_tree
     except Exception as e:
         return {'error': str(e)}
-    
 
-# -------------------------------------------------------
-# main
 
+def get_node_by_id(json_tree, node_id):
+    """
+    Recursively traverse the JSON tree (dictionary) to find the node with the given node_id.
+    """
+    if json_tree is None:
+        return None
+
+    # Check if the current node's ID matches the one we're looking for
+    if json_tree.get('node_id') == node_id:
+        return json_tree
+
+    # Recursively search in the left and right children (now as dictionaries)
+    left_result = get_node_by_id(json_tree.get('left_child'), node_id)
+    if left_result:
+        return left_result
+
+    right_result = get_node_by_id(json_tree.get('right_child'), node_id)
+    return right_result
+
+
+def get_node_info_from_db(node_id, json_tree, db):
+    """
+    Fetches the detailed information (data) for a specific node from the database.
+    Finds the node in the JSON tree by its node_id and generates the corresponding SQL query.
+    """
+    try:
+        # Locate the node in the JSON tree by node_id
+        node = get_node_by_id(json_tree, node_id)
+
+        if node is None:
+            return {'error': 'Node not found in the tree.'}
+
+        # Generate the SQL query for this node
+        query = generateSQL_from_json(node, db)  # We'll write this next
+
+        # Execute the query and fetch results
+        c = db.conn.cursor()
+        c.execute(query)
+        records = c.fetchall()
+
+        # Get the columns for the query result
+        # Fetch column names from the cursor description
+        columns = [desc[0] for desc in c.description]
+
+        # Return both columns and rows as a dictionary
+        return {'columns': columns, 'rows': records}
+
+    except Exception as e:
+        return {'error': str(e)}
+
+
+def generateSQL_from_json(json_node, db):
+    """
+    Generate an SQL query based on the JSON node's type.
+    """
+    node_type = json_node.get('node_type')
+
+    if node_type == 'relation':
+        return f"SELECT * FROM {json_node['relation_name']}"
+
+    elif node_type == 'project':
+        columns = ", ".join(json_node['columns'])
+        subquery = generateSQL_from_json(json_node['left_child'], db)
+        return f"SELECT DISTINCT {columns} FROM ({subquery})"
+
+    elif node_type == 'select':
+        conditions = []
+        for cond in json_node['conditions']:
+            left_operand = cond[1]
+            right_operand = cond[4]
+
+            # If the operand is a column
+            if cond[0] == 'col':
+                left_operand = json_node['left_child']['attributes'][json_node['left_child']['attributes'].index(
+                    cond[1])]
+            if cond[3] == 'col':
+                right_operand = json_node['left_child']['attributes'][json_node['left_child']['attributes'].index(
+                    cond[4])]
+
+            # Handle string values
+            if cond[0] == 'str':
+                left_operand = f"'{left_operand}'"
+            if cond[3] == 'str':
+                right_operand = f"'{right_operand}'"
+
+            conditions.append(f"{left_operand} {cond[2]} {right_operand}")
+
+        subquery = generateSQL_from_json(json_node['left_child'], db)
+        return f"SELECT * FROM ({subquery}) WHERE {' AND '.join(conditions)}"
+
+    elif node_type == 'join':
+        left_query = generateSQL_from_json(json_node['left_child'], db)
+        right_query = generateSQL_from_json(json_node['right_child'], db)
+        join_columns = json_node.get('join_columns', [])
+
+        if not join_columns:
+            raise Exception("Join requires at least one common column.")
+
+        join_condition = " AND ".join(
+            [f"left.{col} = right.{col}" for col in join_columns])
+
+        # # Debug print statements
+        # print("Left Query:", left_query)
+        # print("Right Query:", right_query)
+        # print("Join Condition:", join_condition)
+
+        return f"""
+            SELECT * FROM ({left_query}) AS left
+            JOIN ({right_query}) AS right
+            ON {join_condition}
+        """
+
+    elif node_type == 'union':
+        left_query = generateSQL_from_json(json_node['left_child'], db)
+        right_query = generateSQL_from_json(json_node['right_child'], db)
+
+        # Debug prints for union queries
+        # print("Left Query (Union):", left_query)  # Debug print
+        # print("Right Query (Union):", right_query)  # Debug print
+
+        # Check for empty queries
+        if not left_query.strip() or left_query.lower() == "select * from":
+            if right_query.strip():
+                # Return right side only if left is empty
+                return f"SELECT * FROM ({right_query})"
+            else:
+                return "SELECT NULL"  # If both sides are empty, return NULL
+
+        if not right_query.strip() or right_query.lower() == "select * from":
+            # Return left side only if right is empty
+            return f"SELECT * FROM ({left_query})"
+
+        # Final union query if both queries are valid
+        return f"({left_query}) UNION ({right_query})"
+
+
+
+    elif node_type == 'minus':
+        left_query = generateSQL_from_json(json_node['left_child'], db)
+        right_query = generateSQL_from_json(json_node['right_child'], db)
+        return f"{left_query} EXCEPT {right_query}"
+
+    elif node_type == 'times':
+        left_query = generateSQL_from_json(json_node['left_child'], db)
+        right_query = generateSQL_from_json(json_node['right_child'], db)
+        return f"SELECT * FROM ({left_query}) AS left, ({right_query}) AS right"
+
+    elif node_type == 'rename':
+        left_query = generateSQL_from_json(json_node['left_child'], db)
+        old_columns = json_node['left_child']['attributes']
+        new_columns = json_node['new_columns']
+        if not new_columns or len(new_columns) != len(old_columns):
+            raise Exception(
+                "Rename operation requires matching old and new columns.")
+
+        rename_columns = ", ".join(
+            f"{old} AS {new}" for old, new in zip(old_columns, new_columns))
+        return f"SELECT {rename_columns} FROM ({left_query})"
+
+    else:
+        raise Exception(f"Unsupported node type: {node_type}")
+
+# ---------------------- Main  ----------------------
 def main():
     db = SQLite3()
     db.open(sys.argv[1])
@@ -883,6 +1050,7 @@ def main():
         else:
             print(msg)
     db.close()
+
 
 if __name__ == '__main__':
     main()

@@ -4,120 +4,98 @@
     box-sizing: border-box;
 }
 
-
 body, html {
     height: 100%;
     width: 100%;
 }
 
-
 #app-container {
-    display: grid;
-    grid-template-columns: 4fr 1fr; 
-    gap: 10px;
+    display: flex;
+    flex-direction: row; 
     height: 100vh; 
-    padding: 15px; 
+    padding: 10px; 
+    overflow: hidden; /* Prevent horizontal scrolling */
 }
-
 
 .left-section {
+    flex: 3;
     display: flex;
     flex-direction: column;
+    padding-right: 10px;
     height: 100%;
-    overflow: hidden; /* Prevent overflow */
-}
-
-
-.tree-table-container {
-    display: flex;
-    flex-grow: 1; 
-    gap: 10px; /* Space between tree and table */
-    width: 100%;
-    height: 100%;
-}
-
-
-#cytoscape-tree {
-    flex-basis: 66.66%;
-    height: 100% !important;
-    max-width: 100%;
-    max-height: 100%;
     overflow: hidden;
 }
 
-
-#node-table-placeholder {
-    flex-basis: 33.33%; 
-    height: 100%;
-    border: 1px solid #ddd;
-    text-align: left;
-    padding: 10px;
-    font-size: 14px;
-    overflow-y: auto;
-}
-
-
 .right-section {
+    flex: 1; /* Adjust space on the right */
     display: flex;
     flex-direction: column;
-    justify-content: space-between; 
-    height: 100%; 
+    height: 100%;
+    overflow: hidden; /* Avoid scrolling */
 }
-
 
 .header-dropdown-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
+    margin-bottom: 10px;
 }
 
+.input-container {
+    flex-shrink: 0; /* Prevent shrinking of the input container */
+    margin-bottom: 10px;
+}
 
 #db-name-header {
     text-align: left;
-    font-size: 24px;
+    font-size: 20px;
 }
 
-
 #db-dropdown {
-    width: 200px; 
+    width: 200px;
+}
+
+#query-input {
+    width: 100%;
+}
+
+#submit-btn {
+    width: 100%;
+}
+
+#node-table-placeholder {
+    border: 1px solid #ddd;
+    padding: 5px;
+}
+
+#error-div {
+    color: red;
     text-align: center;
 }
 
+.tree-table-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row; /* Arrange the tree and table side by side */
+    overflow: hidden; /* Prevent overflow */
+}
 
-#documentation-placeholder {
-    text-align: left;
-    font-size: 18px;
-    font-style: italic;
+#cytoscape-tree {
+    flex: 2; /* Adjust the width ratio of the tree */
+    height: 100%;
+    width: 100%;
+}
+
+#node-table-placeholder {
+    flex: 1; /* Adjust the width ratio of the table */
+    height: 100%;
+    overflow-y: auto; /* Allow vertical scrolling inside the table */
+    border: 1px solid #ddd;
     padding: 5px;
 }
 
 
-#query-input {
-    width: 100%;
-    height: 150px;
-    margin: 10px 0;
-}
-
-
-#submit-btn {
-    width: 100%;
-    text-align: center;
-    margin: 10px 0;
-}
-
-
-#schema-info {
-    width: 100%;
-    border: 1px solid #ddd;
-    text-align: left;
-    padding: 10px;
-    font-size: 14px;
-}
-
-
-#error-div {
-    color: red;
-    margin-top: 10px;
-    text-align: center;
+.right-section div {
+    margin-bottom: 10px;
+    overflow-y: auto; /* Scroll vertically within the right section if content exceeds height */
 }
