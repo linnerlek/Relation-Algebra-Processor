@@ -5,21 +5,15 @@ import dash_cytoscape as cyto
 import os
 from RAP import *
 
-
 DB_FOLDER = 'databases'
 
 app = dash.Dash(__name__)
-
 
 def get_db_files():
     db_files = [f for f in os.listdir(DB_FOLDER) if f.endswith('.db')]
     return [{'label': f, 'value': f} for f in db_files]
 
-
 def json_to_cytoscape_elements(json_tree, parent_id=None, elements=None, node_counter=[0]):
-    """
-    Recursively convert the JSON tree into Cytoscape elements.
-    """
     if elements is None:
         elements = []
 
@@ -51,25 +45,18 @@ def json_to_cytoscape_elements(json_tree, parent_id=None, elements=None, node_co
 
     return elements
 
-
 def create_table_from_node_info(node_info):
-    """
-    Generates an HTML table from the node information (columns and rows).
-    """
     columns = node_info['columns']
     rows = node_info['rows']
 
-    # Create the table header
     table_header = [html.Th(col) for col in columns]
 
-    # Create the table body
     table_body = [
         html.Tr([html.Td(cell) for cell in row]) for row in rows
     ]
 
-    # Return the complete table with class for classic styling
     return html.Table(
-        className='classic-table',  # Add a class for styling
+        className='classic-table', 
         children=[
             html.Thead(html.Tr(table_header)),
             html.Tbody(table_body)
@@ -81,7 +68,6 @@ def create_table_from_node_info(node_info):
 app.layout = html.Div([
     html.Div(id="app-container", children=[
         html.Div(className="left-section", children=[
-            # New input container to prevent it from shrinking
             html.Div(className="input-container", children=[
                 html.Div(className="header-dropdown-container", children=[
                     html.H3(id="db-name-header"),
@@ -97,7 +83,6 @@ app.layout = html.Div([
             dcc.Store(id='tree-store'),
             dcc.Store(id='db-path-store'),
 
-            # Tree and table placed side by side
             html.Div(className="tree-table-container", children=[
                 cyto.Cytoscape(
                     id='cytoscape-tree',
@@ -120,14 +105,7 @@ app.layout = html.Div([
     html.Div(id='error-div')
 ])
 
-
-
-
-
-
-
 # ------------------ Callbacks ------------------
-# Database name
 @app.callback(
     Output('db-name-header', 'children'),
     [Input('db-dropdown', 'value')]
@@ -172,7 +150,7 @@ def update_tree(n_clicks, selected_db, query):
 
         except Exception as e:
             return [], {}, str(e)
-
+        
 
 @app.callback(
     Output('node-table-placeholder', 'children'),
@@ -184,20 +162,16 @@ def display_node_info(node_data, json_tree, db_path):
         try:
             node_id = node_data['id']
 
-            # Reopen the database connection using the stored path
             db = SQLite3()
             db.open(db_path)
 
-            # Get the node info from the stored tree
             node_info = get_node_info_from_db(node_id, json_tree, db)
 
-            db.close()  # Close the database connection after fetching the node info
+            db.close() 
 
-            # Check if the node returned data
             if 'error' in node_info:
                 return html.Div([html.P(f"Error: {node_info['error']}")])
 
-            # Convert the result into an HTML table to display the data
             result_table = create_table_from_node_info(node_info)
 
             return result_table
