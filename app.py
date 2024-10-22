@@ -99,8 +99,11 @@ app.layout = html.Div([
         html.Div(className="right-section", children=[
             html.Div(id="documentation-placeholder",
                      children="Documentation Placeholder"),
-            html.Div(id="schema-info", children="Schema Info Placeholder"),
-        ]),
+            html.Div(children=[
+                html.H3("Schema Information"),
+                html.Div(id="schema-info", children="Schema Info Placeholder")
+            ])
+        ])
     ]),
     html.Div(id='error-div')
 ])
@@ -114,6 +117,41 @@ def update_db_header(selected_db):
     if selected_db:
         return f"Selected Database: {selected_db}"
     return "No Database Selected"
+
+
+@app.callback(
+    Output('schema-info', 'children'),
+    [Input('db-dropdown', 'value')]
+)
+def display_schema_info(selected_db):
+    if not selected_db:
+        return "No database selected"
+
+    try:
+        db_path = os.path.join(DB_FOLDER, selected_db)
+        schema_info = fetch_schema_info(db_path)
+
+        if isinstance(schema_info, str):
+            return schema_info
+
+        schema_elements = []
+        for rname, details in schema_info.items():
+            schema_elements.append(
+                html.Details([
+                    html.Summary(rname),
+                    html.Table(className='classic-table', children=[
+                        html.Thead(
+                            html.Tr([html.Th("Attribute"), html.Th("Data type")])),
+                        html.Tbody([html.Tr([html.Td(detail['attribute']), html.Td(
+                            detail['domain'])]) for detail in details])
+                    ])
+                ])
+            )
+
+        return schema_elements
+
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 
 @app.callback(
