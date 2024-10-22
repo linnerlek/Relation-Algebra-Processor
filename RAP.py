@@ -967,6 +967,35 @@ def generateSQL_from_json(json_node, db):
     else:
         raise Exception(f"Unsupported node type: {node_type}")
 
+# Fetches the schema information from the database to display in the schema tab.
+def fetch_schema_info(db_path):
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = cursor.fetchall()
+
+        schema_info = {}
+        for table_name in tables:
+            table_name = table_name[0]
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = cursor.fetchall()
+
+            schema_info[table_name] = []
+            for col in columns:
+                base_type = col[2].split('(')[0]
+                schema_info[table_name].append({
+                    'attribute': col[1],
+                    'domain': base_type
+                })
+
+        conn.close()
+        return schema_info
+
+    except sqlite3.Error as e:
+        return f"Error retrieving schema: {str(e)}"
+
 
 # ---------------------- Main  ----------------------
 def main():
