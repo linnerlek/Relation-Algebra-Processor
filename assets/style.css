@@ -14,9 +14,12 @@ body, html {
     flex-direction: row; 
     height: 100vh; 
     padding: 10px; 
-    overflow: hidden; /* Prevent horizontal scrolling */
+    overflow: hidden; 
 }
 
+/*
+    Left Section
+*/
 .left-section {
     flex: 3;
     display: flex;
@@ -26,23 +29,15 @@ body, html {
     overflow: hidden;
 }
 
-.right-section {
-    flex: 1; /* Adjust space on the right */
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden; /* Avoid scrolling */
+.input-container {
+    flex-shrink: 0; 
+    margin-bottom: 10px;
 }
 
 .header-dropdown-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-}
-
-.input-container {
-    flex-shrink: 0; /* Prevent shrinking of the input container */
     margin-bottom: 10px;
 }
 
@@ -63,39 +58,45 @@ body, html {
     width: 100%;
 }
 
-#node-table-placeholder {
-    border: 1px solid #ddd;
-    padding: 5px;
-}
-
-#error-div {
-    color: red;
-    text-align: center;
+#cytoscape-tree {
+    flex: 2; 
+    height: 100%;
+    width: 100%;
 }
 
 .tree-table-container {
     flex-grow: 1;
     display: flex;
-    flex-direction: row; /* Arrange the tree and table side by side */
-    overflow: hidden; /* Prevent overflow */
-}
-
-#cytoscape-tree {
-    flex: 2; /* Adjust the width ratio of the tree */
-    height: 100%;
-    width: 100%;
+    flex-direction: row;
+    overflow: hidden;
 }
 
 #node-table-placeholder {
-    flex: 1; /* Adjust the width ratio of the table */
+    flex: 1; 
     height: 100%;
-    overflow-y: auto; /* Allow vertical scrolling inside the table */
+    overflow-y: auto; 
     border: 1px solid #ddd;
     padding: 5px;
 }
 
 
+/*
+    Right Section
+*/
+.right-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; 
+}
+
 .right-section div {
     margin-bottom: 10px;
-    overflow-y: auto; /* Scroll vertically within the right section if content exceeds height */
+    overflow-y: auto; 
+}
+
+#error-div {
+    color: red;
+    text-align: center;
 }

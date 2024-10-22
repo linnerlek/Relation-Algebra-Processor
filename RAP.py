@@ -682,8 +682,6 @@ def semantic_checks(tree, db):
 
 # given the relational algebra expression tree, generate an equivalent
 # sqlite3 query.
-
-
 def generateSQL(tree, db):
     if tree.get_node_type() == 'relation':
         return "select * from "+tree.get_relation_name()
@@ -781,7 +779,7 @@ def generateSQL(tree, db):
             tree.get_right_child().get_relation_name()
         query += ")"
         return query
-    else:  # must be minus
+    else:  
         lquery = generateSQL(tree.get_left_child(), db)
         if tree.get_left_child().get_node_type() == "union":
             lquery = "("+lquery+")"
@@ -801,6 +799,7 @@ def generateSQL(tree, db):
 
 # ------------------------ Dash app Functions -------------------------------
 
+# Convert the tree to a JSON object for visualization.
 def tree_to_json(node, db, node_counter=[0]):
     if node is None:
         return None
@@ -825,12 +824,11 @@ def tree_to_json(node, db, node_counter=[0]):
     elif node.get_node_type() == 'join':
         node_json['join_columns'] = node.get_join_columns()
     elif node.get_node_type() == 'rename':
-        # Using columns for renamed columns
         node_json['new_columns'] = node.get_columns()
 
     return node_json
 
-
+# Generate a tree from the given query and perform semantic checks.
 def generate_tree_from_query(query, db, node_counter=[0]):
     try:
         tree = parser.parse(query)
@@ -845,19 +843,14 @@ def generate_tree_from_query(query, db, node_counter=[0]):
     except Exception as e:
         return {'error': str(e)}
 
-
+# Recursively traverse the JSON tree to find the node with the given node_id.
 def get_node_by_id(json_tree, node_id):
-    """
-    Recursively traverse the JSON tree (dictionary) to find the node with the given node_id.
-    """
     if json_tree is None:
         return None
 
-    # Check if the current node's ID matches the one we're looking for
     if json_tree.get('node_id') == node_id:
         return json_tree
 
-    # Recursively search in the left and right children (now as dictionaries)
     left_result = get_node_by_id(json_tree.get('left_child'), node_id)
     if left_result:
         return left_result
@@ -865,51 +858,44 @@ def get_node_by_id(json_tree, node_id):
     right_result = get_node_by_id(json_tree.get('right_child'), node_id)
     return right_result
 
-
+# Fetch the data for a specific node from the database.
+# Finds the node in the JSON tree by node_id and generates the corresponding SQL query.
 def get_node_info_from_db(node_id, json_tree, db):
-    """
-    Fetches the detailed information (data) for a specific node from the database.
-    Finds the node in the JSON tree by its node_id and generates the corresponding SQL query.
-    """
     try:
-        # Locate the node in the JSON tree by node_id
         node = get_node_by_id(json_tree, node_id)
 
         if node is None:
             return {'error': 'Node not found in the tree.'}
 
-        # Generate the SQL query for this node
         query = generateSQL_from_json(node, db)  # We'll write this next
 
-        # Execute the query and fetch results
         c = db.conn.cursor()
         c.execute(query)
         records = c.fetchall()
 
-        # Get the columns for the query result
-        # Fetch column names from the cursor description
         columns = [desc[0] for desc in c.description]
 
-        # Return both columns and rows as a dictionary
         return {'columns': columns, 'rows': records}
 
     except Exception as e:
         return {'error': str(e)}
 
 
+# Generate an SQL query based on the node type.
 def generateSQL_from_json(json_node, db):
-    """
-    Generate an SQL query based on the JSON node's type.
-    """
     node_type = json_node.get('node_type')
 
     if node_type == 'relation':
         return f"SELECT * FROM {json_node['relation_name']}"
 
     elif node_type == 'project':
-        columns = ", ".join(json_node['columns'])
+        columns = json_node['columns']
         subquery = generateSQL_from_json(json_node['left_child'], db)
-        return f"SELECT DISTINCT {columns} FROM ({subquery})"
+
+        if not subquery.strip() or subquery.lower() == "select * from":
+            return "SELECT NULL"
+
+        return f"SELECT DISTINCT {', '.join(columns)} FROM ({subquery})"
 
     elif node_type == 'select':
         conditions = []
@@ -917,7 +903,6 @@ def generateSQL_from_json(json_node, db):
             left_operand = cond[1]
             right_operand = cond[4]
 
-            # If the operand is a column
             if cond[0] == 'col':
                 left_operand = json_node['left_child']['attributes'][json_node['left_child']['attributes'].index(
                     cond[1])]
@@ -925,7 +910,6 @@ def generateSQL_from_json(json_node, db):
                 right_operand = json_node['left_child']['attributes'][json_node['left_child']['attributes'].index(
                     cond[4])]
 
-            # Handle string values
             if cond[0] == 'str':
                 left_operand = f"'{left_operand}'"
             if cond[3] == 'str':
@@ -946,12 +930,7 @@ def generateSQL_from_json(json_node, db):
 
         join_condition = " AND ".join(
             [f"left.{col} = right.{col}" for col in join_columns])
-
-        # # Debug print statements
-        # print("Left Query:", left_query)
-        # print("Right Query:", right_query)
-        # print("Join Condition:", join_condition)
-
+        
         return f"""
             SELECT * FROM ({left_query}) AS left
             JOIN ({right_query}) AS right
@@ -961,28 +940,8 @@ def generateSQL_from_json(json_node, db):
     elif node_type == 'union':
         left_query = generateSQL_from_json(json_node['left_child'], db)
         right_query = generateSQL_from_json(json_node['right_child'], db)
-
-        # Debug prints for union queries
-        # print("Left Query (Union):", left_query)  # Debug print
-        # print("Right Query (Union):", right_query)  # Debug print
-
-        # Check for empty queries
-        if not left_query.strip() or left_query.lower() == "select * from":
-            if right_query.strip():
-                # Return right side only if left is empty
-                return f"SELECT * FROM ({right_query})"
-            else:
-                return "SELECT NULL"  # If both sides are empty, return NULL
-
-        if not right_query.strip() or right_query.lower() == "select * from":
-            # Return left side only if right is empty
-            return f"SELECT * FROM ({left_query})"
-
-        # Final union query if both queries are valid
-        return f"({left_query}) UNION ({right_query})"
-
-
-
+        return f"{left_query} UNION {right_query}"
+    
     elif node_type == 'minus':
         left_query = generateSQL_from_json(json_node['left_child'], db)
         right_query = generateSQL_from_json(json_node['right_child'], db)
@@ -1007,6 +966,7 @@ def generateSQL_from_json(json_node, db):
 
     else:
         raise Exception(f"Unsupported node type: {node_type}")
+
 
 # ---------------------- Main  ----------------------
 def main():
