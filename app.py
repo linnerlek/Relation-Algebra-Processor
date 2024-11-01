@@ -9,6 +9,7 @@ DB_FOLDER = 'databases'
 
 app = dash.Dash(__name__)
 
+
 def get_db_files():
     db_files = [f for f in os.listdir(DB_FOLDER) if f.endswith('.db')]
     return [{'label': f, 'value': f} for f in db_files]
@@ -19,7 +20,7 @@ def json_to_cytoscape_elements(json_tree, parent_id=None, elements=None, node_co
         elements = []
 
     if level_positions is None:
-        level_positions = {} 
+        level_positions = {}
 
     if json_tree is None:
         return elements
@@ -29,6 +30,17 @@ def json_to_cytoscape_elements(json_tree, parent_id=None, elements=None, node_co
 
     if json_tree.get('node_type') == "relation":
         node_label = json_tree.get('relation_name', 'Unknown Relation')
+    elif json_tree.get('node_type') == "project":
+        attributes = ', '.join(json_tree.get('columns', []))
+        node_label += f"\n{attributes}"
+    elif json_tree.get('node_type') == 'select':
+        conditions = [
+            f"{cond[1]} {cond[2]} {cond[4]}" for cond in json_tree.get('conditions', [])
+        ]
+        node_label += f"\n{' and '.join(conditions)}"
+    elif json_tree.get('node_type') == 'rename':
+        new_columns = ', '.join(json_tree.get('new_columns', []))
+        node_label += f"\n{new_columns}"
 
     if y not in level_positions:
         level_positions[y] = []
@@ -55,7 +67,7 @@ def json_to_cytoscape_elements(json_tree, parent_id=None, elements=None, node_co
             'data': {'source': parent_id, 'target': node_id}
         })
 
-    node_counter[0] += 1 
+    node_counter[0] += 1
 
     if json_tree.get('left_child') and json_tree.get('right_child'):
         # Two children: place at 45 degrees
@@ -82,6 +94,7 @@ def json_to_cytoscape_elements(json_tree, parent_id=None, elements=None, node_co
 
     return elements
 
+
 def create_table_from_node_info(node_info):
     columns = node_info['columns']
     rows = node_info['rows']
@@ -93,7 +106,7 @@ def create_table_from_node_info(node_info):
     ]
 
     return html.Table(
-        className='classic-table', 
+        className='classic-table',
         children=[
             html.Thead(html.Tr(table_header)),
             html.Tbody(table_body)
@@ -109,7 +122,10 @@ cytoscape_stylesheet = [
             'text-valign': 'bottom',
             'text-halign': 'center',
             'font-size': '18px',
-            'background-color': '#0071CE'
+            'text-wrap': 'wrap',
+            'white-space': 'pre',
+            'background-color': '#0071CE',
+            'text-transform': 'none'
         }
     },
     {
@@ -158,9 +174,9 @@ app.layout = html.Div([
                     layout={'name': 'preset'},
                     elements=[],
                     stylesheet=cytoscape_stylesheet
-                ), 
+                ),
                 html.Div(
-                    className="table-and-pagination", 
+                    className="table-and-pagination",
                     children=[
                         html.Div(id="node-table-placeholder",
                                  children="Click node to see info"),
@@ -192,6 +208,8 @@ app.layout = html.Div([
 ])
 
 # ------------------ Callbacks ------------------
+
+
 @app.callback(
     Output('db-name-header', 'children'),
     [Input('db-dropdown', 'value')]
@@ -271,7 +289,7 @@ def update_tree(n_clicks, selected_db, query):
 
         except Exception as e:
             return [], {}, str(e)
-        
+
 
 @app.callback(
     [Output('node-table-placeholder', 'children'),
@@ -323,8 +341,6 @@ def display_node_info(node_data, current_page, json_tree, db_path):
     return "Click node to see info.", 0
 
 
-
-
 @app.callback(
     [Output("current-page", "data"),
      Output("prev-clicks", "data"),
@@ -361,7 +377,5 @@ app.clientside_callback(
 )
 
 
-
-
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server()
