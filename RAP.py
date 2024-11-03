@@ -669,15 +669,27 @@ def semantic_checks(tree, db):
         r_attrs = tree.get_columns()
         attrs = tree.get_left_child().get_attributes()
         doms = tree.get_left_child().get_domains()
+
+        # Check for attribute length mismatch
         if len(r_attrs) != len(attrs):
             return "SEMANTIC ERROR (RENAME): " + str(r_attrs) + " and " + str(attrs) + " are of different sizes"
+
+        # Check for duplicate attributes
         if len(list(set(r_attrs))) != len(r_attrs):
             return "SEMANTIC ERROR (RENAME): " + str(r_attrs) + " has duplicates!"
-        r_doms = []
-        for d in doms:
-            r_doms.append(d)
+
+        # Set attributes and domains
+        r_doms = doms[:]
         tree.set_attributes(r_attrs)
         tree.set_domains(doms)
+
+        # Map original attributes to renamed ones for recognition in parent nodes
+        renamed_attr_map = {attrs[i]: r_attrs[i] for i in range(len(attrs))}
+        tree.set_join_columns(
+            [renamed_attr_map.get(col, col)
+            for col in tree.get_left_child().get_join_columns()]
+        )
+
         return 'OK'
 
 # given the relational algebra expression tree, generate an equivalent
@@ -779,7 +791,7 @@ def generateSQL(tree, db):
             tree.get_right_child().get_relation_name()
         query += ")"
         return query
-    else:  
+    else:
         lquery = generateSQL(tree.get_left_child(), db)
         if tree.get_left_child().get_node_type() == "union":
             lquery = "("+lquery+")"
@@ -796,9 +808,7 @@ def generateSQL(tree, db):
         query += ")"
         return query
 
-
 # ------------------------ Dash app Functions -------------------------------
-
 # Convert the tree to a JSON object for visualization.
 def tree_to_json(node, db, node_counter=[0]):
     if node is None:
@@ -817,14 +827,18 @@ def tree_to_json(node, db, node_counter=[0]):
         'attributes': node.get_attributes()
     }
 
+    # Include columns, conditions, and join columns with full qualification if needed
     if node.get_node_type() == 'project':
         node_json['columns'] = node.get_columns()
+    elif node.get_node_type() == 'rename':
+        node_json['new_columns'] = node.get_columns()
     elif node.get_node_type() == 'select':
         node_json['conditions'] = node.get_conditions()
     elif node.get_node_type() == 'join':
         node_json['join_columns'] = node.get_join_columns()
-    elif node.get_node_type() == 'rename':
-        node_json['new_columns'] = node.get_columns()
+        # Ensure join attributes are qualified
+        node_json['attributes'] = node.get_attributes()
+
 
     return node_json
 
@@ -833,15 +847,22 @@ def generate_tree_from_query(query, db, node_counter=[0]):
     try:
         tree = parser.parse(query)
 
+        # Set temporary table names as done in the backend
+        set_temp_table_names(tree)
+
         validation_msg = semantic_checks(tree, db)
         if validation_msg != 'OK':
             return {'error': f"Semantic check failed: {validation_msg}"}
+
+        # print("Generated Tree Structure:")
+        # tree.print_tree(0)
 
         json_tree = tree_to_json(tree, db, node_counter)
 
         return json_tree
     except Exception as e:
         return {'error': str(e)}
+
 
 # Recursively traverse the JSON tree to find the node with the given node_id.
 def get_node_by_id(json_tree, node_id):
@@ -858,16 +879,48 @@ def get_node_by_id(json_tree, node_id):
     right_result = get_node_by_id(json_tree.get('right_child'), node_id)
     return right_result
 
-# Fetch the data for a specific node from the database.
-# Finds the node in the JSON tree by node_id and generates the corresponding SQL query.
+
+# Reconstruct a Node object from a JSON representation.
+def json_to_node(json_node):
+    if json_node is None:
+        return None
+
+    node = Node(json_node['node_type'],
+                json_to_node(json_node.get('left_child')),
+                json_to_node(json_node.get('right_child')))
+
+    if node.get_node_type() == 'rename':
+        if 'new_columns' in json_node:
+            new_cols = json_node['new_columns']
+            node.set_columns(new_cols)
+            node.set_relation_name(new_cols[0])
+
+    node.set_relation_name(json_node.get('relation_name'))
+    node.set_attributes(json_node.get('attributes'))
+
+    if 'columns' in json_node:
+        node.set_columns(json_node['columns'])
+
+    if 'conditions' in json_node:
+        node.set_conditions(json_node['conditions'])
+    if 'join_columns' in json_node:
+        node.set_join_columns(json_node.get('join_columns', []))
+
+    # print("Node relation name:", node.get_relation_name())
+    # print("Node columns:", node.get_columns())
+    # print("Node join columns:", node.get_join_columns())
+    return node
+
+
 def get_node_info_from_db(node_id, json_tree, db):
     try:
-        node = get_node_by_id(json_tree, node_id)
+        node_json = get_node_by_id(json_tree, node_id)
 
-        if node is None:
+        if node_json is None:
             return {'error': 'Node not found in the tree.'}
 
-        query = generateSQL_from_json(node, db)  # We'll write this next
+        node = json_to_node(node_json)
+        query = generateSQL(node, db)
 
         c = db.conn.cursor()
         c.execute(query)
@@ -875,99 +928,20 @@ def get_node_info_from_db(node_id, json_tree, db):
 
         columns = [desc[0] for desc in c.description]
 
-        return {'columns': columns, 'rows': records}
+        qualified_columns = []
+        for col in columns:
+            
+            if col.startswith('TEMP_'):
+                col_name = col.split('.')[-1]
+                qualified_columns.append(col_name)
+            else:
+                qualified_columns.append(col)
+
+        return {'columns': qualified_columns, 'rows': records}
 
     except Exception as e:
         return {'error': str(e)}
 
-
-# Generate an SQL query based on the node type.
-def generateSQL_from_json(json_node, db):
-    node_type = json_node.get('node_type')
-
-    if node_type == 'relation':
-        return f"SELECT * FROM {json_node['relation_name']}"
-
-    elif node_type == 'project':
-        columns = json_node['columns']
-        subquery = generateSQL_from_json(json_node['left_child'], db)
-
-        if not subquery.strip() or subquery.lower() == "select * from":
-            return "SELECT NULL"
-
-        return f"SELECT DISTINCT {', '.join(columns)} FROM ({subquery})"
-
-    elif node_type == 'select':
-        conditions = []
-        for cond in json_node['conditions']:
-            left_operand = cond[1]
-            right_operand = cond[4]
-
-            if cond[0] == 'col':
-                left_operand = json_node['left_child']['attributes'][json_node['left_child']['attributes'].index(
-                    cond[1])]
-            if cond[3] == 'col':
-                right_operand = json_node['left_child']['attributes'][json_node['left_child']['attributes'].index(
-                    cond[4])]
-
-            if cond[0] == 'str':
-                left_operand = f"'{left_operand}'"
-            if cond[3] == 'str':
-                right_operand = f"'{right_operand}'"
-
-            conditions.append(f"{left_operand} {cond[2]} {right_operand}")
-
-        subquery = generateSQL_from_json(json_node['left_child'], db)
-        return f"SELECT * FROM ({subquery}) WHERE {' AND '.join(conditions)}"
-
-    elif node_type == 'join':
-        left_query = generateSQL_from_json(json_node['left_child'], db)
-        right_query = generateSQL_from_json(json_node['right_child'], db)
-        join_columns = json_node.get('join_columns', [])
-
-        if not join_columns:
-            raise Exception("Join requires at least one common column.")
-
-        join_condition = " AND ".join(
-            [f"left.{col} = right.{col}" for col in join_columns])
-        
-        return f"""
-            SELECT * FROM ({left_query}) AS left
-            JOIN ({right_query}) AS right
-            ON {join_condition}
-        """
-
-    elif node_type == 'union':
-        left_query = generateSQL_from_json(json_node['left_child'], db)
-        right_query = generateSQL_from_json(json_node['right_child'], db)
-        return f"{left_query} UNION {right_query}"
-    
-    elif node_type == 'minus':
-        left_query = generateSQL_from_json(json_node['left_child'], db)
-        right_query = generateSQL_from_json(json_node['right_child'], db)
-        return f"{left_query} EXCEPT {right_query}"
-
-    elif node_type == 'times':
-        left_query = generateSQL_from_json(json_node['left_child'], db)
-        right_query = generateSQL_from_json(json_node['right_child'], db)
-        return f"SELECT * FROM ({left_query}) AS left, ({right_query}) AS right"
-
-    elif node_type == 'rename':
-        left_query = generateSQL_from_json(json_node['left_child'], db)
-        old_columns = json_node['left_child']['attributes']
-        new_columns = json_node['new_columns']
-        if not new_columns or len(new_columns) != len(old_columns):
-            raise Exception(
-                "Rename operation requires matching old and new columns.")
-
-        rename_columns = ", ".join(
-            f"{old} AS {new}" for old, new in zip(old_columns, new_columns))
-        return f"SELECT {rename_columns} FROM ({left_query})"
-
-    else:
-        raise Exception(f"Unsupported node type: {node_type}")
-
-# Fetches the schema information from the database to display in the schema tab.
 def fetch_schema_info(db_path):
     try:
         conn = sqlite3.connect(db_path)

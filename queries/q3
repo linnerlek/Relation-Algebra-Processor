@@ -1,6 +1,3 @@
-# Query 3: Find the names of employees who work on all the 
-# projects controlled by department number 4.
-
 project[lname,fname](
  (employee
   join

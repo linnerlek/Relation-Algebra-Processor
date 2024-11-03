@@ -1,8 +1,3 @@
-# Query 2: For every project located in "Stafford", 
-# list the project number, the controlling department 
-# number, and the department manager's last name, address, 
-# and birth date.
-
 project[pnumber,dnum,lname,address,bdate](
   (
    (select[plocation='Stafford'](projects) 
