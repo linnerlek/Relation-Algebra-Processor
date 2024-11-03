@@ -1,0 +1,11 @@
+# retrieves auditoriums with the media code "LAC," displaying their building code, room number, layout, capacity, and media description
+
+project[bcode, rnumber, layout, cap, description](
+  select[layout = 'Auditorium' and mcode = 'LAC'](
+    (ROOM
+     join
+     ROOMMEDIA)
+    join
+    project[mcode, description](MEDIA)
+  )
+);

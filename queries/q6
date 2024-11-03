@@ -1,3 +1,5 @@
+# Retrieve the names of employees who have no dependents.
+
 project[lname,fname](
  ( ( project[ssn](employee) 
      minus project[essn](dependent)

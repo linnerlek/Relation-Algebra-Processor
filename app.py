@@ -45,7 +45,6 @@ def json_to_cytoscape_elements(json_tree, parent_id=None, elements=None, node_co
     if y not in level_positions:
         level_positions[y] = []
 
-    # detects potential overlap at the current level
     overlap_detected = False
     for pos in level_positions[y]:
         if abs(pos - x) < min_separation:
@@ -70,7 +69,6 @@ def json_to_cytoscape_elements(json_tree, parent_id=None, elements=None, node_co
     node_counter[0] += 1
 
     if json_tree.get('left_child') and json_tree.get('right_child'):
-        # Two children: place at 45 degrees
         json_to_cytoscape_elements(
             json_tree['left_child'], node_id, elements, node_counter, x -
             x_offset, y + y_offset, x_offset, y_offset, min_separation, level_positions
@@ -80,13 +78,11 @@ def json_to_cytoscape_elements(json_tree, parent_id=None, elements=None, node_co
             x_offset, y + y_offset, x_offset, y_offset, min_separation, level_positions
         )
     elif json_tree.get('left_child'):
-        # One child place directly below
         json_to_cytoscape_elements(
             json_tree['left_child'], node_id, elements, node_counter, x, y +
             y_offset, x_offset, y_offset, min_separation, level_positions
         )
     elif json_tree.get('right_child'):
-        # One child place directly below
         json_to_cytoscape_elements(
             json_tree['right_child'], node_id, elements, node_counter, x, y +
             y_offset, x_offset, y_offset, min_separation, level_positions
@@ -99,11 +95,24 @@ def create_table_from_node_info(node_info):
     columns = node_info['columns']
     rows = node_info['rows']
 
-    table_header = [html.Th(col) for col in columns]
+    unique_columns = []
+    seen_columns = set()
 
-    table_body = [
-        html.Tr([html.Td(cell) for cell in row]) for row in rows
+    for col in columns:
+        base_col = col.split('.')[-1].lower() 
+        if base_col not in seen_columns:
+            unique_columns.append(col)
+            seen_columns.add(base_col)
+
+    table_header = [html.Th(col) for col in unique_columns]
+
+    col_indices = [columns.index(col) for col in unique_columns]
+    filtered_rows = [
+        [row[idx] for idx in col_indices] for row in rows
     ]
+
+    table_body = [html.Tr([html.Td(cell) for cell in row])
+                  for row in filtered_rows]
 
     return html.Table(
         className='classic-table',
@@ -209,15 +218,20 @@ app.layout = html.Div([
 
 # ------------------ Callbacks ------------------
 
-
 @app.callback(
     Output('db-name-header', 'children'),
+    Output('query-input', 'value'),
     [Input('db-dropdown', 'value')]
 )
 def update_db_header(selected_db):
     if selected_db:
-        return f"Selected Database: {selected_db}"
-    return "No Database Selected"
+        header = f"Selected Database: {selected_db}"
+    else:
+        header = "No Database Selected"
+
+    query_input = ""
+    
+    return header, query_input
 
 
 @app.callback(
@@ -259,16 +273,25 @@ def display_schema_info(selected_db):
     [Output('cytoscape-tree', 'elements'),
      Output('tree-store', 'data'),
      Output('db-path-store', 'data'),
-     Output('error-div', 'children')],
-    [Input('submit-btn', 'n_clicks')],
-    [State('db-dropdown', 'value'), State('query-input', 'value')]
+     Output('error-div', 'children'),
+     Output('error-div', 'style')],
+    [Input('submit-btn', 'n_clicks'),
+     Input('db-dropdown', 'value')],
+    [State('query-input', 'value')]
 )
 def update_tree(n_clicks, selected_db, query):
+    ctx = dash.callback_context
+    if ctx.triggered and ctx.triggered[0]['prop_id'].startswith('db-dropdown'):
+        return [], {}, "", "", {'display': 'none'}
+
+    if n_clicks is None: 
+        return [], {}, "", "", {'display': 'none'}
+
     if not selected_db:
-        return [], {}, "", "Please select a database."
+        return [], {}, "", "Please select a database.", {'display': 'block'}
 
     if not query:
-        return [], {}, "", "Please enter a query."
+        return [], {}, "", "Please enter a query.", {'display': 'block'}
 
     if n_clicks and selected_db and query:
         try:
@@ -279,26 +302,35 @@ def update_tree(n_clicks, selected_db, query):
             json_tree = generate_tree_from_query(query, db, node_counter=[0])
 
             if 'error' in json_tree:
-                raise Exception(f"Error in query: {json_tree['error']}")
+                raise Exception(
+                    f"Error in query: {json_tree['error']}. Is the right database selected?")
 
             elements = json_to_cytoscape_elements(json_tree)
 
             db.close()
 
-            return elements, json_tree, db_path, ""
+            return elements, json_tree, db_path, "", {'display': 'none'}
 
         except Exception as e:
-            return [], {}, str(e)
+            # Show the error message
+            return [], {}, str(e), str(e), {'display': 'block'}
 
 
 @app.callback(
     [Output('node-table-placeholder', 'children'),
      Output('row-count', 'data')],
     [Input('cytoscape-tree', 'tapNodeData'),
+     Input('db-dropdown', 'value'),
      Input('current-page', 'data')],
     [State('tree-store', 'data'), State('db-path-store', 'data')]
 )
-def display_node_info(node_data, current_page, json_tree, db_path):
+def display_node_info(node_data, selected_db, current_page, json_tree, db_path):
+    ctx = dash.callback_context
+
+    if ctx.triggered and ctx.triggered[0]['prop_id'].startswith('db-dropdown'):
+        return "Click node to see info.", 0  
+
+
     if node_data:
         try:
             node_id = node_data['id']
@@ -338,7 +370,7 @@ def display_node_info(node_data, current_page, json_tree, db_path):
         except Exception as e:
             return f"Error occurred: {str(e)}", 0
 
-    return "Click node to see info.", 0
+    return "Click node to see info.", 0 
 
 
 @app.callback(

@@ -1,0 +1,7 @@
+# show games from the results table where the home team scored more than 5 home runs
+
+project[home, hruns](
+  select[hruns > 5](
+    (results join teams)
+  )
+);

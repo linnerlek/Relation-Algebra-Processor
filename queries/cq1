@@ -1,0 +1,14 @@
+# retrieves rooms with a capacity greater than 100 that have the "Video Projector (Digital)" media description, displaying the building code, room number, capacity and description
+
+project[bcode, rnumber, cap, description](
+  select[description = 'Video Projector (Digital)' and cap > 100](
+    (project[bcode, rnumber, cap, layout, mcode](
+      ROOM 
+      join 
+      ROOMMEDIA
+    ))
+    join
+    project[mcode, description](MEDIA)
+  )
+);
+
