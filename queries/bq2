@@ -1,4 +1,4 @@
-retrieves all home teams that scored more than the visiting team, excluding records associated with IDs from temp2
+# retrieves all home teams that scored more than the visiting team, excluding records associated with IDs from temp2
 
 project[home, hruns](
   select[hruns > vruns](

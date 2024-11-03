@@ -1,4 +1,6 @@
-project[lname,fname](
+# List the names of managers who have at least one dependent.
+
+project[lname, fname](
   ((rename[ssn](project[mgrssn](department))
     join
     rename[ssn](project[essn](dependent))
