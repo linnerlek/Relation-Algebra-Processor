@@ -155,7 +155,12 @@ cytoscape_stylesheet = [
 
 
 # ------------------ HTML ------------------
+app.title = "RA-viz"
 app.layout = html.Div([
+    html.Div(className="header", children=[
+        html.Img(src=app.get_asset_url('RA-viz.png'), className="logo"),
+        html.H1("RA-viz: Relational Algebra Visualizer"),
+    ]),
     html.Div(id="app-container", children=[
         html.Div(className="left-section", children=[
             html.Div(className="input-container", children=[
@@ -410,4 +415,4 @@ app.clientside_callback(
 
 
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(debug=True)
