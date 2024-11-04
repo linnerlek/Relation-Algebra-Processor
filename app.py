@@ -10,6 +10,14 @@ DB_FOLDER = 'databases'
 app = dash.Dash(__name__)
 
 
+def get_readme_content():
+    with open('instructions.md', 'r') as file:
+        return file.read()
+
+def get_queries_content():
+    with open('queries.md', 'r') as file:
+        return file.read()
+
 def get_db_files():
     db_files = [f for f in os.listdir(DB_FOLDER) if f.endswith('.db')]
     return [{'label': f, 'value': f} for f in db_files]
@@ -99,7 +107,7 @@ def create_table_from_node_info(node_info):
     seen_columns = set()
 
     for col in columns:
-        base_col = col.split('.')[-1].lower() 
+        base_col = col.split('.')[-1].lower()
         if base_col not in seen_columns:
             unique_columns.append(col)
             seen_columns.add(base_col)
@@ -152,81 +160,151 @@ cytoscape_stylesheet = [
     }
 
 ]
-
-
 # ------------------ HTML ------------------
-app.title = "RA-viz"
-app.layout = html.Div([
-    html.Div(className="header", children=[
-        html.Img(src=app.get_asset_url('RA-viz.png'), className="logo"),
-        html.H1("RA-viz: Relational Algebra Visualizer"),
-    ]),
-    html.Div(id="app-container", children=[
-        html.Div(className="left-section", children=[
-            html.Div(className="input-container", children=[
-                html.Div(className="header-dropdown-container", children=[
-                    html.H3(id="db-name-header"),
-                    dcc.Dropdown(id="db-dropdown", options=get_db_files(),
-                                 placeholder="Select a database"),
+
+
+def main_layout():
+    return html.Div([
+        dcc.Location(id='url', refresh=False),
+        html.Div(id='page-content'),
+        dcc.Store(id='code-click', data=None),
+        html.Div(className="header", children=[
+            html.Img(src=app.get_asset_url('RA-viz.png'), className="logo"),
+            html.H1("RA-viz: Relational Algebra Visualizer"),
+        ]),
+        html.Div(id="app-container", children=[
+            html.Div(className="left-section", children=[
+                html.Div(className="input-container", children=[
+                    html.Div(className="header-dropdown-container", children=[
+                        html.H3(id="db-name-header"),
+                        dcc.Dropdown(id="db-dropdown", options=get_db_files(),
+                                     placeholder="Select a database"),
+                    ]),
+                    dcc.Textarea(id="query-input",
+                                 placeholder="Enter relational algebra query"),
+                    html.Button("Submit", id="submit-btn"),
                 ]),
-                dcc.Textarea(id="query-input",
-                             placeholder="Enter relational algebra query"),
-                html.Button("Submit", id="submit-btn"),
+
+                dcc.Store(id='tree-store'),
+                dcc.Store(id='db-path-store'),
+                dcc.Store(id="current-page", data=0),
+                dcc.Store(id="prev-clicks", data=0),
+                dcc.Store(id="next-clicks", data=0),
+                dcc.Store(id="row-count", data=0),
+
+
+                html.Div(className="tree-table-container", children=[
+                    cyto.Cytoscape(
+                        id='cytoscape-tree',
+                        layout={'name': 'preset'},
+                        elements=[],
+                        stylesheet=cytoscape_stylesheet
+                    ),
+                    html.Div(
+                        className="table-and-pagination",
+                        children=[
+                            html.Div(id="node-table-placeholder",
+                                     children="Click node to see info"),
+                            html.Div(
+                                [
+                                    html.Button(
+                                        "Previous", id="prev-page-btn", n_clicks=0),
+                                    html.Button(
+                                        "Next", id="next-page-btn", n_clicks=0)
+                                ],
+                                className="pagination-buttons"
+                            ),
+                        ],
+                    ),
+                ]),
             ]),
 
-            dcc.Store(id='tree-store'),
-            dcc.Store(id='db-path-store'),
-            dcc.Store(id="current-page", data=0),
-            dcc.Store(id="prev-clicks", data=0),
-            dcc.Store(id="next-clicks", data=0),
-            dcc.Store(id="row-count", data=0),
+            html.Div(className="right-section", children=[
+                html.Div(id="documentation-placeholder", children=[
+                    html.A("Documentation",
+                           id="installation-info-link", href="#"),
+                    html.A("View Saved Queries",
+                                id="open-query-modal-btn", href="#"),
 
-
-            html.Div(className="tree-table-container", children=[
-                cyto.Cytoscape(
-                    id='cytoscape-tree',
-                    layout={'name': 'preset'},
-                    elements=[],
-                    stylesheet=cytoscape_stylesheet
-                ),
-                html.Div(
-                    className="table-and-pagination",
-                    children=[
-                        html.Div(id="node-table-placeholder",
-                                 children="Click node to see info"),
-                        html.Div(
-                            [
-                                html.Button(
-                                    "Previous", id="prev-page-btn", n_clicks=0),
-                                html.Button(
-                                    "Next", id="next-page-btn", n_clicks=0)
-                            ],
-                            className="pagination-buttons"
-                        ),
-                    ],
-                ),
+                ]),
+                html.Details(id="schema-container", open=True, children=[
+                    html.Summary("Schema Information"),
+                    html.Div(id="schema-info",
+                             children="Schema Info Placeholder")
+                ])
+            ]),
+            html.Div(id="modal", className="modal", style={"display": "none"}, children=[
+                html.Div(className="modal-content", children=[
+                    html.Div(id="button-container", children=[
+                        html.Button("Close", id="close-modal-btn")
+                    ]),
+                    html.Div(id="modal-body", className="markdown-content"),
+                ])
+            ]),
+            html.Div(id="query-modal", className="modal", style={"display": "none"}, children=[
+                html.Div(className="modal-content", children=[
+                    html.Div(id="button-container", children=[
+                        html.Button("Close", id="close-query-modal-btn")
+                    ]),
+                    html.Div(id="query-modal-body",
+                             className="markdown-content"),
+                ]),
             ]),
         ]),
+        html.Div(id='error-div')
+    ])
 
-        html.Div(className="right-section", children=[
-            html.Div(id="documentation-placeholder",
-                     children="Documentation Placeholder"),
 
-            html.Details(id="schema-container", open=True, children=[
-                html.Summary("Schema Information"),
-                html.Div(id="schema-info", children="Schema Info Placeholder")
-            ])
-        ])
-    ]),
-    html.Div(id='error-div')
-])
+app.title = "RA-viz"
+app.layout = main_layout()
+
 
 # ------------------ Callbacks ------------------
+@app.callback(
+    [Output("modal", "style"),
+     Output("modal-body", "children")],
+    [Input("installation-info-link", "n_clicks"),
+     Input("close-modal-btn", "n_clicks")]
+)
+def toggle_modal(install_clicks, close_clicks):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return {"display": "none"}, ""
+
+    trigger = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if trigger == "installation-info-link" and install_clicks:
+        readme_content = get_readme_content()
+        return {"display": "flex"}, dcc.Markdown(readme_content)
+
+    return {"display": "none"}, ""
+
+
+@app.callback(
+    [Output("query-modal", "style"),
+     Output("query-modal-body", "children")],
+    [Input("open-query-modal-btn", "n_clicks"),
+     Input("close-query-modal-btn", "n_clicks")]
+)
+def toggle_query_modal(open_clicks, close_clicks):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return {"display": "none"}, ""
+
+    trigger = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if trigger == "open-query-modal-btn" and open_clicks:
+        queries_content = get_queries_content()
+        return {"display": "flex"}, dcc.Markdown(queries_content)
+    
+    return {"display": "none"}, ""
+
 
 @app.callback(
     Output('db-name-header', 'children'),
     Output('query-input', 'value'),
-    [Input('db-dropdown', 'value')]
+    [Input('db-dropdown', 'value')],
+    allow_duplicate=True
 )
 def update_db_header(selected_db):
     if selected_db:
@@ -235,8 +313,9 @@ def update_db_header(selected_db):
         header = "No Database Selected"
 
     query_input = ""
-    
+
     return header, query_input
+
 
 
 @app.callback(
@@ -289,7 +368,7 @@ def update_tree(n_clicks, selected_db, query):
     if ctx.triggered and ctx.triggered[0]['prop_id'].startswith('db-dropdown'):
         return [], {}, "", "", {'display': 'none'}
 
-    if n_clicks is None: 
+    if n_clicks is None:
         return [], {}, "", "", {'display': 'none'}
 
     if not selected_db:
@@ -333,8 +412,7 @@ def display_node_info(node_data, selected_db, current_page, json_tree, db_path):
     ctx = dash.callback_context
 
     if ctx.triggered and ctx.triggered[0]['prop_id'].startswith('db-dropdown'):
-        return "Click node to see info.", 0  
-
+        return "Click node to see info.", 0
 
     if node_data:
         try:
@@ -375,7 +453,7 @@ def display_node_info(node_data, selected_db, current_page, json_tree, db_path):
         except Exception as e:
             return f"Error occurred: {str(e)}", 0
 
-    return "Click node to see info.", 0 
+    return "Click node to see info.", 0
 
 
 @app.callback(
@@ -415,4 +493,4 @@ app.clientside_callback(
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server()
