@@ -1,10 +1,12 @@
 # Retrieve the name and address of employees who work for the "Research" department.
 
-project[fname,lname,address](
-project[fname,lname,address](
-  (rename[dname,dno,mgrssn,mgrstartdate](
-      select[dname='Research'](department)) 
-   join 
-   employee
+project[pnumber,dnum,lname,address,bdate](
+  (
+   (select[plocation='Stafford'](projects) 
+    join 
+    rename[dname,dnum,ssn,mgrstartdate](department)
+   )
+   join employee
   )
 );
+
