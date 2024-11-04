@@ -1,221 +1,241 @@
 /* Default GSU Font */
-@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
 
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Lato, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Lato, sans-serif;
 }
 
-body, html {
-    height: 100%;
-    width: 100%;
+body,
+html {
+  height: 100%;
+  width: 100%;
+}
+
+.header {
+  background-color: #0039a6;
+  height: 6vh;
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  height: 5vh;
+  margin-left: 7px;
+}
+
+.header h1 {
+  font-size: 24px;
+  color: white;
+  flex-grow: 1;
+  text-align: center;
 }
 
 #app-container {
-    display: flex;
-    flex-direction: row; 
-    height: 100vh; 
-    padding: 10px; 
-    overflow: hidden; 
+  display: flex;
+  flex-direction: row;
+  height: 94vh;
+  padding: 10px;
+  overflow: hidden;
 }
 
 /*
     Left Section
 */
 .left-section {
-    flex: 6;
-    display: flex;
-    flex-direction: column;
-    padding-right: 10px;
-    height: 100%;
-    overflow: hidden;
+  flex: 6;
+  display: flex;
+  flex-direction: column;
+  padding-right: 10px;
+  height: 100%;
+  overflow: hidden;
 }
 
 .input-container {
-    flex-shrink: 0; 
+  flex-shrink: 0;
 }
 
 .header-dropdown-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
 #db-name-header {
-    text-align: left;
-    font-size: 16px;
+  text-align: left;
+  font-size: 17px;
 }
 
 #db-dropdown {
-    width: 200px;
+  width: 200px;
 }
 
 #query-input {
-    resize: none;
-    width: 100%;
-    height: 100px;
-    font-size: 16px;
-    border: 1px solid #CCCCCC;
+  resize: none;
+  width: 100%;
+  height: 100px;
+  font-size: 16px;
+  border: 1px solid #cccccc;
 }
 
 #submit-btn {
-    width: 100%;
-    padding: 5px;
-    font-size: 16px;
-    background-color: #EEEEEE;
-    border: 1px solid #CCCCCC;
+  width: 100%;
+  padding: 5px;
+  font-size: 16px;
+  background-color: #eeeeee;
+  border: 1px solid #cccccc;
 }
 
 #submit-btn:hover {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .tree-table-container {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: row;
-    overflow: hidden;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
 }
 
 .table-and-pagination {
-    flex: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 10px;
-    overflow-y: auto; 
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+  overflow-y: auto;
 }
 
 #node-table-placeholder {
-    height: 100%;
-    width: 100%;
-    overflow-y: auto; 
-    border: 1px solid #CCCCCC;
-    padding: 5px;
-    font-size: 16px;
-    color: #696969;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  border: 1px solid #cccccc;
+  padding: 5px;
+  font-size: 16px;
+  color: #696969;
 }
 
 .pagination-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-#prev-page-btn, #next-page-btn {
-    padding: 5px;
-    font-size: 16px;
-    background-color: #EEEEEE;
-    border: 1px solid #CCCCCC;
+#prev-page-btn,
+#next-page-btn {
+  padding: 5px;
+  font-size: 16px;
+  background-color: #eeeeee;
+  border: 1px solid #cccccc;
 }
 
-#prev-page-btn:hover, #next-page-btn:hover {
-    cursor: pointer;
+#prev-page-btn:hover,
+#next-page-btn:hover {
+  cursor: pointer;
 }
-
 
 /* 
     Cytoscape Tree
 */
 #cytoscape-tree {
-    flex: 3 !important;
-    height: 100% !important;
-    width: 100% !important;
+  flex: 3 !important;
+  height: 100% !important;
+  width: 100% !important;
 }
 
 #cytoscape-tree .cytoscape-node:hover {
-    cursor: pointer !important;
+  cursor: pointer !important;
 }
-
 
 /*
     Right Section
 */
 .right-section {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden; 
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .right-section div {
-    margin-bottom: 10px;
-    overflow-y: auto; 
+  margin-bottom: 10px;
+  overflow-y: auto;
 }
 
 #documentation-placeholder {
-    height: 80px;
-    padding: 5px;
-    font-size: 16px;
+  height: 80px;
+  padding: 5px;
+  font-size: 16px;
 }
 
 #schema-container {
-    margin-top: 10px;
-    font-size: 18px;
-    cursor: pointer;
+  margin-top: 10px;
+  font-size: 18px;
+  cursor: pointer;
 }
 
 #schema-info {
-    margin-bottom: 10px;
-    overflow-y: auto;
-    padding: 10px;
-    color: #696969;
+  margin-bottom: 10px;
+  overflow-y: auto;
+  padding: 10px;
+  color: #696969;
 }
 
 .classic-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 10px 0;
-    font-size: 16px;
-    text-align: left;
-    border: 1px solid #ddd;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 16px;
+  text-align: left;
+  border: 1px solid #ddd;
 }
 
-.classic-table th, .classic-table td {
-    padding: 10px 15px;
-    border: 1px solid #ddd;
+.classic-table th,
+.classic-table td {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
 }
 
 .classic-table th {
-    background-color: #0071CE;
-    color: white;
-    font-weight: bold;
+  background-color: #0071ce;
+  color: white;
+  font-weight: bold;
 }
 
 .classic-table tr:nth-child(even) {
-    background-color: #EEEEEE;
+  background-color: #eeeeee;
 }
 
 details {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
 
 details summary {
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-bottom: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 10px;
 }
-
 
 /*
     Error div
 */
 #error-div {
-    display: none;
-    background-color: red;
-    color: white;
-    text-align: center;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 20px;
-    border-radius: 10px;
-    z-index: 1000;
+  display: none;
+  background-color: red;
+  color: white;
+  text-align: center;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  border-radius: 10px;
+  z-index: 1000;
 }
