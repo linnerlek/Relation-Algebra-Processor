@@ -687,13 +687,15 @@ def semantic_checks(tree, db):
         renamed_attr_map = {attrs[i]: r_attrs[i] for i in range(len(attrs))}
         tree.set_join_columns(
             [renamed_attr_map.get(col, col)
-            for col in tree.get_left_child().get_join_columns()]
+             for col in tree.get_left_child().get_join_columns()]
         )
 
         return 'OK'
 
 # given the relational algebra expression tree, generate an equivalent
 # sqlite3 query.
+
+
 def generateSQL(tree, db):
     if tree.get_node_type() == 'relation':
         return "select * from "+tree.get_relation_name()
@@ -810,6 +812,8 @@ def generateSQL(tree, db):
 
 # ------------------------ Dash app Functions -------------------------------
 # Convert the tree to a JSON object for visualization.
+
+
 def tree_to_json(node, db, node_counter=[0]):
     if node is None:
         return None
@@ -839,10 +843,11 @@ def tree_to_json(node, db, node_counter=[0]):
         # Ensure join attributes are qualified
         node_json['attributes'] = node.get_attributes()
 
-
     return node_json
 
 # Generate a tree from the given query and perform semantic checks.
+
+
 def generate_tree_from_query(query, db, node_counter=[0]):
     try:
         tree = parser.parse(query)
@@ -930,7 +935,7 @@ def get_node_info_from_db(node_id, json_tree, db):
 
         qualified_columns = []
         for col in columns:
-            
+
             if col.startswith('TEMP_'):
                 col_name = col.split('.')[-1]
                 qualified_columns.append(col_name)
@@ -941,6 +946,7 @@ def get_node_info_from_db(node_id, json_tree, db):
 
     except Exception as e:
         return {'error': str(e)}
+
 
 def fetch_schema_info(db_path):
     try:
