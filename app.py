@@ -1,3 +1,4 @@
+from doctest import debug
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
@@ -14,9 +15,11 @@ def get_readme_content():
     with open('instructions.md', 'r') as file:
         return file.read()
 
+
 def get_queries_content():
     with open('queries.md', 'r') as file:
         return file.read()
+
 
 def get_db_files():
     db_files = [f for f in os.listdir(DB_FOLDER) if f.endswith('.db')]
@@ -173,7 +176,7 @@ def main_layout():
             html.H1("RA-viz: Relational Algebra Visualizer"),
         ]),
         html.Div(id="app-container", children=[
-            html.Div(className="left-section", children=[
+            html.Div(id="left-section", className="left-section", children=[
                 html.Div(className="input-container", children=[
                     html.Div(className="header-dropdown-container", children=[
                         html.H3(id="db-name-header"),
@@ -218,13 +221,14 @@ def main_layout():
                     ),
                 ]),
             ]),
+            html.Div(id="divider", className="divider"),
 
-            html.Div(className="right-section", children=[
+            html.Div(id="right-section", className="right-section", children=[
                 html.Div(id="documentation-placeholder", children=[
                     html.A("Documentation",
                            id="installation-info-link", href="#"),
                     html.A("View Saved Queries",
-                                id="open-query-modal-btn", href="#"),
+                           id="open-query-modal-btn", href="#"),
 
                 ]),
                 html.Details(id="schema-container", open=True, children=[
@@ -243,7 +247,7 @@ def main_layout():
             ]),
             html.Div(id="query-modal", className="modal", style={"display": "none"}, children=[
                 html.Div(className="modal-content", children=[
-                    html.Div(id="button-container", children=[
+                    html.Div(id="query-button-container", children=[
                         html.Button("Close", id="close-query-modal-btn")
                     ]),
                     html.Div(id="query-modal-body",
@@ -296,7 +300,7 @@ def toggle_query_modal(open_clicks, close_clicks):
     if trigger == "open-query-modal-btn" and open_clicks:
         queries_content = get_queries_content()
         return {"display": "flex"}, dcc.Markdown(queries_content)
-    
+
     return {"display": "none"}, ""
 
 
@@ -315,7 +319,6 @@ def update_db_header(selected_db):
     query_input = ""
 
     return header, query_input
-
 
 
 @app.callback(
@@ -493,4 +496,5 @@ app.clientside_callback(
 
 
 if __name__ == '__main__':
-    app.run_server()
+    # app.run_server(debug=True)
+    app.run_server(host='0.0.0.0', port=5020)
