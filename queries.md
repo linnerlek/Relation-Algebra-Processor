@@ -1,5 +1,12 @@
 # Queries
-## Company.db
+## Navigation
+- [Company.db](#companydb)
+- [Baseball.db](#baseballdb)
+- [Classroom.db](#classroomdb)
+
+**TIP:** Click on a query to directly insert it into the input field. Ensure that the correct database is selected before you submit.
+<h2 id="companydb">Company.db</h2>
+
 ### Query 1
 Make a list of project numbers for projects that involve an employee whose last name is "Smith", either as a worker or as a manager of the department that controls the project.
 ```
@@ -55,8 +62,43 @@ join
 employee)
 );
 ```
+### Query 4
+Retrieve the names of employees who have no dependents.
+```
+project[lname,fname](
+ ( ( project[ssn](employee) 
+     minus project[essn](dependent)
+   ) 
+   join 
+   employee
+ )
+);
+```
+### Query 5
+Find the names of employees who work on all the projects controlled by department number 4.
+```
+project[lname,fname](
+ (employee
+  join
+  (project[ssn](employee)
+   minus
+   project[ssn](
+    (
+      (project[ssn](employee) 
+       times  
+       project[pnumber](select[dnum=4](projects))
+      )
+      minus
+      rename[ssn,pnumber](project[essn,pno](works_on))
+    )
+   )
+  )
+ )
+);
+```
 
-## Baseball.db
+<h2 id="baseballdb">Baseball.db</h2>
+
 ### Query 1
 Show games where the home team scored more than 5 home runs
 ```
@@ -81,8 +123,8 @@ project[home, pid](
    project[pid](temp2))
 );
 ```
+<h2 id="classroomdb">Classroom.db</h2>
 
-## Classroom.db
 ### Query 1
 Displays the building code, room number, capacity and description of rooms with a capacity greater than 100 that have the "Video Projector (Digital)" media description
 ```

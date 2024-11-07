@@ -1,10 +1,11 @@
 from doctest import debug
 import dash
 from dash import dcc, html
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ALL
 import dash_cytoscape as cyto
 import os
 from RAP import *
+import re
 
 DB_FOLDER = 'databases'
 
@@ -203,6 +204,7 @@ def main_layout():
                         elements=[],
                         stylesheet=cytoscape_stylesheet
                     ),
+                    html.Div(id="tree-table-divider", className="divider"),
                     html.Div(
                         className="table-and-pagination",
                         children=[
@@ -227,7 +229,7 @@ def main_layout():
                 html.Div(id="documentation-placeholder", children=[
                     html.A("Documentation",
                            id="installation-info-link", href="#"),
-                    html.A("View Saved Queries",
+                    html.A("Queries",
                            id="open-query-modal-btn", href="#"),
 
                 ]),
@@ -299,26 +301,66 @@ def toggle_query_modal(open_clicks, close_clicks):
 
     if trigger == "open-query-modal-btn" and open_clicks:
         queries_content = get_queries_content()
-        return {"display": "flex"}, dcc.Markdown(queries_content)
+
+        parts = re.split(r'(```.*?```)', queries_content, flags=re.DOTALL)
+
+        query_elements = []
+        element_index = 1
+
+        for part in parts:
+            if part.startswith("```") and part.endswith("```"):
+                query_elements.append(
+                    html.Pre(
+                        part.strip('`').strip(),
+                        className='query-block',
+                        id={'type': 'query-block', 'index': element_index},
+                        style={'cursor': 'pointer'}
+                    )
+                )
+                element_index += 1
+            elif part.strip():
+                query_elements.append(dcc.Markdown(
+                    part.strip(), dangerously_allow_html=True))
+
+        return {"display": "flex"}, query_elements
 
     return {"display": "none"}, ""
 
 
 @app.callback(
-    Output('db-name-header', 'children'),
-    Output('query-input', 'value'),
-    [Input('db-dropdown', 'value')],
-    allow_duplicate=True
+    [Output("db-name-header", "children"),
+     Output("query-input", "value")],
+    [Input("db-dropdown", "value"),
+     Input({"type": "query-block", "index": ALL}, "n_clicks")],
+    [State("query-modal-body", "children")],
+    prevent_initial_call=True,
 )
-def update_db_header(selected_db):
-    if selected_db:
-        header = f"Selected Database: {selected_db}"
-    else:
-        header = "No Database Selected"
+def update_db_or_insert_query(selected_db, query_block_clicks, modal_children):
+    ctx = dash.callback_context
 
-    query_input = ""
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
 
-    return header, query_input
+    trigger = ctx.triggered[0]["prop_id"]
+
+    if trigger == "db-dropdown.value":
+        header = f"Selected Database: {selected_db}" if selected_db else "No Database Selected"
+        return header, ""
+
+    if "query-block" in trigger:
+        triggered_id = eval(trigger.split(".")[0])
+        triggered_index = triggered_id["index"]
+
+        click_count = query_block_clicks[triggered_index - 1] or 0
+
+        if click_count > 0:
+            for element in modal_children:
+                if isinstance(element, dict) and element["type"] == "Pre":
+                    if "id" in element["props"] and element["props"]["id"]["type"] == "query-block" and element["props"]["id"]["index"] == triggered_index:
+                        query_text = element["props"]["children"]
+                        return dash.no_update, query_text
+
+    return dash.no_update, dash.no_update
 
 
 @app.callback(
