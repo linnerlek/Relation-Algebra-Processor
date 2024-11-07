@@ -1,4 +1,3 @@
-// Toggle for schema information
 document.addEventListener("DOMContentLoaded", function () {
   const schemaContainer = document.getElementById("schema-container");
 
@@ -12,7 +11,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-// Shows buttons if row is more than 8
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: {
         togglePaginationButtons: function(rowCount) {
@@ -31,12 +29,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
     }
 });
 
-// Wait for the page to load to avoid errors with elements not being found
 function observeCytoscapeTree() {
   const cyElement = document.getElementById("cytoscape-tree");
 
   if (cyElement) {
-    // Set up ResizeObserver if cyElement exists
     const resizeObserver = new ResizeObserver((entries) => {
       entries.forEach((entry) => {
         if (window.cy) {
@@ -49,11 +45,10 @@ function observeCytoscapeTree() {
     resizeObserver.observe(cyElement);
   } else {
     console.log("Waiting for 'cytoscape-tree' to load...");
-    setTimeout(observeCytoscapeTree, 100); // Retry every 100ms
+    setTimeout(observeCytoscapeTree, 100); 
   }
 }
 
-// Start checking after DOMContentLoaded
 document.addEventListener("DOMContentLoaded", observeCytoscapeTree);
 
 function initializeResizableDivider() {
@@ -65,39 +60,85 @@ function initializeResizableDivider() {
   // Check if elements exist
   if (!divider || !leftSection || !rightSection || !container) {
     console.log("Waiting for elements to load...");
-    setTimeout(initializeResizableDivider, 100); // Retry every 100ms
+    setTimeout(initializeResizableDivider, 100); 
     return;
   }
 
   let isDragging = false;
 
-  // Start dragging when the mouse is down on the divider
   divider.addEventListener("mousedown", (e) => {
     isDragging = true;
     document.body.style.cursor = "ew-resize";
     e.preventDefault();
   });
 
-  // Adjust width on mouse move
   document.addEventListener("mousemove", (e) => {
     if (!isDragging) return;
 
     const containerWidth = container.offsetWidth;
-    const leftWidth = e.clientX; // Mouse position from the left edge
+    const leftWidth = e.clientX; 
 
-    // Ensure sections don't get too small or too large
-    if (leftWidth >= 100 && leftWidth <= containerWidth - 100) {
+    if (leftWidth >= 450 && leftWidth <= containerWidth - 50) {
       leftSection.style.flexBasis = `${leftWidth}px`;
       rightSection.style.flexBasis = `${containerWidth - leftWidth}px`;
     }
   });
 
-  // Stop dragging on mouse up
   document.addEventListener("mouseup", () => {
     isDragging = false;
     document.body.style.cursor = "default";
   });
 }
 
-// Start checking for elements after DOMContentLoaded
 document.addEventListener("DOMContentLoaded", initializeResizableDivider);
+
+function initializeTreeTableResizableDivider() {
+  const divider = document.getElementById("tree-table-divider");
+  const treeSection = document.getElementById("cytoscape-tree");
+  const tableSection = document.querySelector(".table-and-pagination");
+  const container = document.querySelector(".tree-table-container");
+
+  if (!divider || !treeSection || !tableSection || !container) {
+    setTimeout(initializeTreeTableResizableDivider, 100);
+    return;
+  }
+
+  let isDragging = false;
+  let startX = 0; 
+  let startTreeWidth = 0; 
+
+  divider.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    startX = e.clientX; 
+    startTreeWidth = treeSection.getBoundingClientRect().width; 
+    document.body.style.cursor = "ew-resize";
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+
+    const deltaX = e.clientX - startX; 
+    const newTreeWidth = startTreeWidth + deltaX; 
+
+    const containerWidth = container.getBoundingClientRect().width;
+
+    if (newTreeWidth >= 10 && newTreeWidth <= containerWidth - 10) {
+      treeSection.style.flexBasis = `${newTreeWidth}px`;
+      tableSection.style.flexBasis = `${containerWidth - newTreeWidth}px`;
+    }
+  });
+
+  document.addEventListener("mouseup", () => {
+    isDragging = false;
+    document.body.style.cursor = "default";
+  });
+}
+
+document.addEventListener(
+  "DOMContentLoaded",
+  initializeTreeTableResizableDivider
+);
+
+
+

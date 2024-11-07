@@ -12,31 +12,24 @@ This application is a `Dash`-based tool for visualizing relational algebra queri
 
 ### Step 2: Entering a Relational Algebra Query
 - **Locate the Input Field:** Below the database dropdown, there is a text area where you can input your relational algebra query.
-- **Format Your Query:** Use proper relational algebra syntax. For example:
-```
-project[pnumber,dnum,lname,address,bdate](
-  (
-   (select[plocation='Stafford'](projects)
-    join
-    rename[dname,dnum,ssn,mgrstartdate](department)
-   )
-   join employee
-  )
-);
-```
+- **Format Your Query:** Use proper relational algebra syntax. See **"Queries"** for examples.
 - **Submit the Query:** Click the **"Submit"** button below the input field to run the query.
 - **Clear Previous Inputs:** Ensure you clear or modify any previous input if you plan to run a new query.
 
+**Tip:** Click on a query in **"Queries"** to automatically insert it into the query input box.
+
 ### Step 3: Viewing and Interacting with the Visualization
 - **Initial View:** Once the query is submitted, a visual representation of the relational operations will appear as a **tree** in the main display area.
-- **Node Interaction:**
-    - **Click Nodes:** Click on any node to view details about the specific operation it represents.
-    - **Details Display:** A table with operation-specific data will appear on the right side, showing relevant columns and rows.
-- **Graph Navigation:**
-    - **Zoom and Pan:** Use your mouse or trackpad to zoom in/out and drag to pan across the graph.
-    - **Select and Highlight:** Selected nodes are highlighted for better visibility.
+- **Interact with Nodes:** Click on nodes to view operation-specific details in a table on the right.
+- **Graph controls:** Use your mouse or trackpad to zoom, pan, and interact with the tree.
 
-## Example Query Syntax and Operations
+### Step 4: Working with the Node Table
+- **View Node Details:** The node table on the right displays details for the selected node.
+- **Resize the Node Table:** Drag the left edge of the node table to adjust its width for better visibility.
+- **Scroll Inside the Node Table:** Use the scrollbars or your trackpad to explore the table content if it overflows.
+
+
+## Operations
 ### List of Supported Operations
 The application supports the following relational algebra operations:
 - **`project:`** Specifies the columns to be displayed in the output.
@@ -47,29 +40,6 @@ The application supports the following relational algebra operations:
 - **`intersect:`** Returns only the rows that are present in both queries.
 - **`times:`** Computes the Cartesian product, specifically handled with relational naming for clear output.
 - **`minus:`** Returns rows from the first query that are not present in the second.
-
-### Comprehensive Query Example
-Here is an example query that utilizes multiple operations:
-```
-project[lname, fname](
-  ((rename[ssn](project[mgrssn](department))
-    join
-    rename[ssn](project[essn](dependent))
-   )
-  join
-  employee
-  )
-);
-
-```
-- **Explanation:**
-    - `project[mgrssn](department)`: Projects the `mgrssn` column from the `department` table.
-    - `rename[ssn](project[mgrssn](department))`: Renames `mgrssn` to `ssn` for consistency.
-    - `project[essn](dependent)`: Projects the `essn` column from the `dependent` table.
-    - `rename[ssn](project[essn](dependent))`: Renames `essn` to `ssn` for matching purposes.
-    - `join`: Joins the renamed projections to match `ssn` values.
-    - Final `join` with `employee`: Combines the result with the `employee` table to match `ssn` with employee records.
-    - `project[lname, fname]`: Final projection to display only the `lname` and `fname` columns of the matching managers
 
 ## Troubleshooting
 ### Common Issues and Solutions
