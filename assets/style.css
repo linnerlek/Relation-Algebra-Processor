@@ -1,6 +1,8 @@
 /* Default GSU Font */
 @import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
-
+/*
+  ************** UNIVERSAL **************
+*/
 * {
   margin: 0;
   padding: 0;
@@ -15,6 +17,33 @@ html {
   scroll-behavior: smooth;
 }
 
+.classic-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15.5px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+.classic-table th,
+.classic-table td {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+}
+
+.classic-table th {
+  background-color: #0071ce;
+  color: white;
+  font-weight: bold;
+}
+
+.classic-table tr:nth-child(even) {
+  background-color: #eeeeee;
+}
+
+/*
+  ************** TOP SECTION **************
+*/
 .header {
   background-color: #0039a6;
   height: 6vh;
@@ -44,10 +73,10 @@ html {
 }
 
 /*
-    Left Section
+  ************** LEFT SECTION **************
 */
 .left-section {
-  flex: 6;
+  flex: 8;
   display: flex;
   flex-direction: column;
   padding-right: 10px;
@@ -55,6 +84,9 @@ html {
   overflow: hidden;
 }
 
+/*
+  LEFT TOP
+*/
 .input-container {
   flex-shrink: 0;
 }
@@ -76,6 +108,10 @@ html {
   width: 200px;
 }
 
+.Select--single>.Select-control .Select-value, .Select-placeholder {
+  cursor: pointer;
+}
+
 #query-input {
   resize: none;
   width: 100%;
@@ -88,167 +124,25 @@ html {
   width: 100%;
   padding: 5px;
   font-size: 16px;
-  background-color: #eeeeee;
-  border: 1px solid #cccccc;
+  color: white;
+  background-color: #0071CE;
+  border: 0;
 }
 
 #submit-btn:hover {
   cursor: pointer;
+  background-color: #05508d;
 }
 
+/*
+  LEFT BOTTOM
+*/
 .tree-table-container {
   display: flex;
   flex-direction: row;
   overflow: hidden;
   width: 100%;
   height: 100%;
-}
-
-.table-and-pagination {
-  flex-basis: 30%; /* 30% width */
-  flex-grow: 1; /* Allows some expansion if space allows */
-  flex-shrink: 1; /* Allows shrinking when space is tight */
-  min-width: 150px; /* Minimum width to keep the table visible */
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  max-height: 100%;
-}
-
-#node-table-placeholder {
-  flex-grow: 1;
-  overflow-y: auto;
-  border: 1px solid #cccccc;
-  padding: 5px;
-  font-size: 16px;
-  color: #696969;
-}
-
-.pagination-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-#prev-page-btn,
-#next-page-btn {
-  padding: 5px;
-  font-size: 16px;
-  background-color: #eeeeee;
-  border: 1px solid #cccccc;
-}
-
-#prev-page-btn:hover,
-#next-page-btn:hover {
-  cursor: pointer;
-}
-
-/* 
-    Cytoscape Tree
-*/
-#cytoscape-tree {
-  flex-basis: 70% !important;
-  flex-grow: 1 !important;
-  flex-shrink: 1 !important;
-  min-width: 200px !important;
-  height: 100% !important;
-  width: 100% !important;
-  overflow: hidden !important;
-}
-
-#cytoscape-tree .cytoscape-node:hover {
-  cursor: pointer !important;
-}
-
-/*
-    Right Section
-*//* Default GSU Font */
-@import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: Lato, sans-serif;
-}
-
-body,
-html {
-  height: 100%;
-  width: 100%;
-}
-
-.header {
-  background-color: #0039a6;
-  height: 6vh;
-  display: flex;
-  align-items: center;
-}
-
-.logo {
-  height: 5vh;
-  margin-left: 7px;
-}
-
-.header h1 {
-  font-size: 24px;
-  color: white;
-  flex-grow: 1;
-  text-align: center;
-}
-
-/*
-    Left Section
-*/
-
-.left-section {
-  flex: 6;
-  display: flex;
-  flex-direction: column;
-  padding-right: 10px;
-  height: 100%;
-  overflow: hidden;
-}
-
-.input-container {
-  flex-shrink: 0;
-}
-
-.header-dropdown-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-#db-name-header {
-  text-align: left;
-  font-size: 17px;
-}
-
-#db-dropdown {
-  width: 200px;
-}
-
-#query-input {
-  resize: none;
-  width: 100%;
-  height: 100px;
-  font-size: 16px;
-  border: 1px solid #cccccc;
-}
-
-#submit-btn {
-  width: 100%;
-  padding: 5px;
-  font-size: 16px;
-  background-color: #eeeeee;
-  border: 1px solid #cccccc;
-}
-
-#submit-btn:hover {
-  cursor: pointer;
 }
 
 #tree-table-divider {
@@ -262,6 +156,27 @@ html {
   overflow: hidden;
 }
 
+/*
+  TREE
+*/
+#cytoscape-tree {
+  flex-basis: 70% !important;
+  flex-grow: 1 !important;
+  flex-shrink: 1 !important;
+  min-width: 200px !important;
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  padding: 7px !important;
+}
+
+#cytoscape-tree .cytoscape-node:hover {
+  cursor: pointer !important;
+}
+
+/*
+  TABLE
+*/
 .table-and-pagination {
   flex-basis: 45%; /* Initial width */
   display: flex;
@@ -278,7 +193,6 @@ html {
   border: 1px solid #cccccc;
   padding: 5px;
   font-size: 16px;
-  color: #696969;
 }
 
 .pagination-buttons {
@@ -286,38 +200,27 @@ html {
   justify-content: center;
   gap: 10px;
   margin-top: 10px;
+  padding-bottom: 10px;
 }
 
 #prev-page-btn,
 #next-page-btn {
   padding: 5px;
   font-size: 16px;
-  background-color: #eeeeee;
-  border: 1px solid #cccccc;
+  color: white;
+  background-color: #0071CE;
+  border: 0;
 }
 
 #prev-page-btn:hover,
 #next-page-btn:hover {
   cursor: pointer;
-}
-
-/* 
-    Cytoscape Tree
-*/
-#cytoscape-tree {
-  flex-basis: 55% !important;
-  height: 100% !important;
-  padding: 7px;
-}
-
-#cytoscape-tree .cytoscape-node:hover {
-  cursor: pointer !important;
+  background-color: #05508d;
 }
 
 /*
-    Right Section
+  ************** RIGHT SECTION **************
 */
-
 #divider {
   cursor: ew-resize;
   background-color: #0039a6;
@@ -339,6 +242,9 @@ html {
   overflow-y: auto;
 }
 
+/*
+  INFO LINKS
+*/
 #documentation-placeholder {
   display: flex;
   flex-direction: column;
@@ -358,262 +264,10 @@ html {
   text-decoration: underline;
   cursor: pointer;
 }
-
-
-#schema-container {
-  margin-top: 10px;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-#schema-info {
-  margin-bottom: 10px;
-  overflow-y: auto;
-  padding: 10px;
-  color: #696969;
-}
-
-.classic-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 10px 0;
-  font-size: 16px;
-  text-align: left;
-  border: 1px solid #ddd;
-}
-
-.classic-table th,
-.classic-table td {
-  padding: 10px 15px;
-  border: 1px solid #ddd;
-}
-
-.classic-table th {
-  background-color: #0071ce;
-  color: white;
-  font-weight: bold;
-}
-
-.classic-table tr:nth-child(even) {
-  background-color: #eeeeee;
-}
-
-details {
-  margin-bottom: 15px;
-}
-
-details summary {
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
-.modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80vw;
-    height: 80vh;
-    background-color: white;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    display: block;
-    flex-direction: column;
-    padding: 20px;
-    border-radius: 8px;
-    overflow-y: auto;
-}
-
-.modal-content {
-    position: relative;
-}
-
-.modal-overlay {
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-}
-#button-container {
-  position: sticky;
-  top: 0;
-  text-align: right; /* Ensures the button container aligns the button to the right */
-  z-index: 1000;
-}
-
-#close-modal-btn, #close-query-modal-btn{
-    background-color: #0039a6; 
-    color: white; 
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 14px;
-}
-
-#close-modal-btn:hover, #close-query-modal-btn:hover {
-    background-color: #082d70; 
-}
-
 
 /*
-    Error div
+  INFO POPUP
 */
-#error-div {
-  display: none;
-  background-color: red;
-  color: white;
-  text-align: center;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 20px;
-  border-radius: 10px;
-  z-index: 1000;
-}
-
-
-/* 
-  README.md
-*/
-.markdown-content {
-    line-height: 1.6;
-    padding: 10px;
-}
-
-.markdown-content h1 {
-    font-size: 30px;
-    color: #0039a6;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #e0e0e0;
-    padding-bottom: 5px;
-}
-
-.markdown-content h2 {
-    font-size: 26px;
-    margin-bottom: 15px;
-}
-
-.markdown-content h3, .markdown-content h4 {
-    font-size: 20px;
-    margin-bottom: 10px;
-}
-
-.markdown-content code {
-    background-color: #f5f5f5;
-    color: #0039a6;
-    padding: 2px 4px;
-    border-radius: 4px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 18px;
-}
-
-.markdown-content pre {
-    background-color: #f5f5f5;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 7px;
-    overflow-x: auto;
-    font-family: 'Courier New', Courier, monospace;
-    margin-bottom: 10px;
-    cursor: pointer;
-    font-size: 18px;
-}
-
-.markdown-content ul, .markdown-content ol {
-    padding-left: 40px;
-    margin-bottom: 20px;
-}
-
-.markdown-content li {
-    margin-bottom: 8px;
-}
-
-.markdown-content p {
-    margin-bottom: 15px;
-    font-size: 17px;
-}
-
-.markdown-content a {
-    color: #0039a6;
-    line-height: 0;
-}
-
-#documentation-placeholder {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-#installation-info-link,
-#open-query-modal-btn {
-  font-size: 16px;
-  color: #0039a6;
-  text-decoration: none;
-  padding: 5px;
-}
-
-#installation-info-link:hover,
-#open-query-modal-btn:hover {
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-
-#schema-container {
-  margin-top: 10px;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-#schema-info {
-  margin-bottom: 10px;
-  overflow-y: auto;
-  padding: 10px;
-  color: #696969;
-}
-
-.classic-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 10px 0;
-  font-size: 16px;
-  text-align: left;
-  border: 1px solid #ddd;
-}
-
-.classic-table th,
-.classic-table td {
-  padding: 10px 15px;
-  border: 1px solid #ddd;
-}
-
-.classic-table th {
-  background-color: #0071ce;
-  color: white;
-  font-weight: bold;
-}
-
-.classic-table tr:nth-child(even) {
-  background-color: #eeeeee;
-}
-
-details {
-  margin-bottom: 15px;
-}
-
-details summary {
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
 .modal {
     position: fixed;
     top: 50%;
@@ -643,10 +297,11 @@ details summary {
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
 }
+
 #button-container, #query-button-container {
   position: sticky;
   top: 0;
-  text-align: right; /* Ensures the button container aligns the button to the right */
+  text-align: right;
   z-index: 1000;
 }
 
@@ -664,9 +319,35 @@ details summary {
     background-color: #082d70; 
 }
 
+/*
+  SCHEMA
+*/
+#schema-container {
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+#schema-info {
+  margin-bottom: 10px;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+details {
+  margin-bottom: 15px;
+  cursor: pointer;
+}
+
+details summary {
+  margin-bottom: 7px;
+}
 
 /*
-    Error div
+  ************** OTHER **************
+*/
+
+/*
+    ERROR POPUP
 */
 #error-div {
   display: none;
@@ -682,9 +363,8 @@ details summary {
   z-index: 1000;
 }
 
-
 /* 
-  README.md
+  MARKDOWN
 */
 .markdown-content {
     line-height: 1.6;
@@ -715,6 +395,7 @@ details summary {
     padding: 2px 4px;
     border-radius: 4px;
     font-family: 'Courier New', Courier, monospace;
+    font-size: 16px;
 }
 
 .markdown-content pre {
@@ -725,6 +406,8 @@ details summary {
     overflow-x: auto;
     font-family: 'Courier New', Courier, monospace;
     margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 16px;
 }
 
 .markdown-content ul, .markdown-content ol {
@@ -739,4 +422,10 @@ details summary {
 
 .markdown-content p {
     margin-bottom: 15px;
+    font-size: 17px;
+}
+
+.markdown-content a {
+    color: #0039a6;
+    line-height: 0;
 }
