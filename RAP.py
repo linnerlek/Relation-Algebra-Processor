@@ -5,7 +5,8 @@ import ply.lex as lex
 
 reserved = {
     'project': 'PROJECT', 'rename': 'RENAME', 'union': 'UNION', 'intersect': 'INTERSECT',
-    'minus': 'MINUS', 'join': 'JOIN', 'times': 'TIMES', 'select': 'SELECT', 'and': 'AND'
+    'minus': 'MINUS', 'join': 'JOIN', 'times': 'TIMES', 'select': 'SELECT', 'and': 'AND', 'like': 'LIKE',
+    'sum': 'SUM', 'count': 'COUNT'
 }
 
 tokens = [
@@ -118,8 +119,9 @@ def p_ID(p):
 def p_proj_expr(p):
     'proj_expr : PROJECT LBRACKET attr_list RBRACKET LPARENT expr RPARENT'
     n = Node("project", p[6], None)
-    n.set_columns(p[3])
+    n.set_columns(p[3])  # attr_list may contain aggregates like SUM or COUNT
     p[0] = n
+
 
 
 def p_rename_expr(p):
@@ -130,13 +132,23 @@ def p_rename_expr(p):
 
 
 def p_attr_list(p):
-    'attr_list : ID'
-    p[0] = [p[1].upper()]
+    '''attr_list : ID
+                 | COUNT LPARENT ID RPARENT
+                 | SUM LPARENT ID RPARENT'''
+    if len(p) == 2:
+        p[0] = [p[1].upper()]
+    else:
+        p[0] = [f"{p[1].upper()}({p[3].upper()})"]
 
 
 def p_attr_list_2(p):
-    'attr_list : attr_list COMMA ID'
-    p[0] = p[1] + [p[3].upper()]
+    '''attr_list : attr_list COMMA ID
+                 | attr_list COMMA COUNT LPARENT ID RPARENT
+                 | attr_list COMMA SUM LPARENT ID RPARENT'''
+    if len(p) == 4:
+        p[0] = p[1] + [p[3].upper()]
+    else:
+        p[0] = p[1] + [f"{p[3].upper()}({p[5].upper()})"]
 
 
 def p_union_expr(p):
@@ -192,8 +204,9 @@ def p_condition_2(p):
 
 
 def p_simple_condition(p):
-    'simple_condition : operand COMPARISION operand'
-    p[0] = [p[1][0], p[1][1], p[2], p[3][0], p[3][1]]
+    '''simple_condition : operand COMPARISION operand
+                        | operand LIKE operand'''
+    p[0] = [p[1][0], p[1][1], p[2].upper(), p[3][0], p[3][1]]
 
 
 def p_operand_1(p):
@@ -643,24 +656,28 @@ def semantic_checks(tree, db):
         status = semantic_checks(tree.get_left_child(), db)
         if status != 'OK':
             return status
+
         p_attrs = tree.get_columns()
         attrs = tree.get_left_child().get_attributes()
         doms = tree.get_left_child().get_domains()
 
         for attr in p_attrs:
-            if attr not in attrs:
-                return "SEMANTIC ERROR (PROJECT): Attribute " + attr + " does not exist"
+            if '(' in attr and ')' in attr:
+                func_name, col_name = attr.split('(')
+                col_name = col_name.strip(')')
 
-        if len(list(set(p_attrs))) != len(p_attrs):
-            return "SEMANTIC ERROR (RENAME): " + str(p_attrs) + " has duplicates!"
+                if func_name.upper() not in ['COUNT', 'SUM']:
+                    return f"SEMANTIC ERROR (PROJECT): Unsupported aggregate function {func_name}"
 
-        p_doms = []
-        for attr in p_attrs:
-            p_doms.append(doms[attrs.index(attr)])
-
+                if col_name != '*' and col_name not in attrs:
+                    return f"SEMANTIC ERROR (PROJECT): Attribute {col_name} does not exist for aggregate {func_name}({col_name})"
+            else:
+                if attr not in attrs:
+                    return f"SEMANTIC ERROR (PROJECT): Attribute {attr} does not exist"
         tree.set_attributes(p_attrs)
-        tree.set_domains(p_doms)
+        tree.set_domains(["INTEGER" for _ in p_attrs])
         return 'OK'
+
 
     if tree.get_node_type() == 'rename':
         status = semantic_checks(tree.get_left_child(), db)
@@ -715,16 +732,20 @@ def generateSQL(tree, db):
                "(("+rquery+") "+tree.get_right_child().get_relation_name()+")"
     elif tree.get_node_type() == "project":
         lquery = generateSQL(tree.get_left_child(), db)
-        if tree.get_left_child().get_node_type() == "union":
-            lquery = "("+lquery+")"
-        query = "select distinct "
-        for attr in tree.get_attributes():
-            # query += tree.get_left_child().get_relation_name()+"."+attr+", "
-            query += attr+", "
-        query = query[:-2]
-        query += " from ("+lquery+") " + \
-            tree.get_left_child().get_relation_name()
+        query = "select "
+
+        for attr in tree.get_columns():
+            query += f"{attr}, "
+
+        query = query[:-2] 
+        query += f" from ({lquery})"
+
+        non_aggregate_cols = [col for col in tree.get_columns() if '(' not in col]
+        if non_aggregate_cols:
+            query += f" group by {', '.join(non_aggregate_cols)}"
+
         return query
+
     elif tree.get_node_type() == "rename":
         lquery = generateSQL(tree.get_left_child(), db)
         if tree.get_left_child().get_node_type() == "union":
@@ -749,9 +770,14 @@ def generateSQL(tree, db):
             c4 = condition[4]
             if condition[3] == 'str':
                 c4 = '\''+c4+'\''
-            query += str(c1)+str(condition[2])+str(c4)+" and "
-        query = query[:-5]
+            if condition[2] == 'LIKE':
+                query += f"{c1} LIKE {c4} and "
+            else:
+                query += str(c1)+str(condition[2])+str(c4)+" and "
+
+        query = query[:-5] 
         return query
+
     elif tree.get_node_type() == "join":
         lquery = generateSQL(tree.get_left_child(), db)
         if tree.get_left_child().get_node_type() == "union":
