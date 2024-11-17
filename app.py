@@ -290,9 +290,11 @@ def toggle_modal(install_clicks, close_clicks):
     [Output("query-modal", "style"),
      Output("query-modal-body", "children")],
     [Input("open-query-modal-btn", "n_clicks"),
-     Input("close-query-modal-btn", "n_clicks")]
+     Input("close-query-modal-btn", "n_clicks"),
+     Input('db-dropdown', 'value')],
+    prevent_initial_call=True
 )
-def toggle_query_modal(open_clicks, close_clicks):
+def toggle_query_modal(open_clicks, close_clicks, selected_db):
     ctx = dash.callback_context
     if not ctx.triggered:
         return {"display": "none"}, ""
@@ -302,29 +304,48 @@ def toggle_query_modal(open_clicks, close_clicks):
     if trigger == "open-query-modal-btn" and open_clicks:
         queries_content = get_queries_content()
 
-        parts = re.split(r'(```.*?```)', queries_content, flags=re.DOTALL)
+        if selected_db:
+            normalized_db = selected_db.replace('.db', '').lower()
+            db_div_pattern = rf'<div data-db="{re.escape(normalized_db)}">.*?</div>'
+            match = re.search(db_div_pattern, queries_content,
+                              flags=re.DOTALL | re.IGNORECASE)
 
+            if match:
+                relevant_content = match.group(0)
+                # print("Matched content:", relevant_content)
+            else:
+                relevant_content = "No queries available for this database."
+        else:
+            relevant_content = queries_content
+
+        parts = re.split(r'(```.*?```)', relevant_content, flags=re.DOTALL)
         query_elements = []
         element_index = 1
 
         for part in parts:
+            part = part.strip()
             if part.startswith("```") and part.endswith("```"):
                 query_elements.append(
                     html.Pre(
-                        part.strip('`').strip(),
+                        part.strip('`'),
                         className='query-block',
                         id={'type': 'query-block', 'index': element_index},
                         style={'cursor': 'pointer'}
                     )
                 )
                 element_index += 1
-            elif part.strip():
+            elif part.startswith("<h2") and part.endswith("</h2>"):
                 query_elements.append(dcc.Markdown(
-                    part.strip(), dangerously_allow_html=True))
+                    part, dangerously_allow_html=True))
+            elif part:
+                query_elements.append(dcc.Markdown(
+                    part, dangerously_allow_html=True))
 
         return {"display": "flex"}, query_elements
 
     return {"display": "none"}, ""
+
+
 
 
 @app.callback(
@@ -538,5 +559,5 @@ app.clientside_callback(
 
 
 if __name__ == '__main__':
-    # app.run_server(debug=True)
-    app.run_server(host='0.0.0.0', port=5020)
+    app.run_server(debug=True)
+    # app.run_server(host='0.0.0.0', port=5020)
